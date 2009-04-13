@@ -56,6 +56,7 @@ sub publish {
     if (@fileinfos) {
         my $fileinfo = $fileinfos[0];
         my $object;
+
         if ($fileinfo->entry_id) {
             $object = MT->model('entry')->lookup($fileinfo->entry_id);
         } else {
@@ -76,7 +77,7 @@ sub publish {
         }
 
         unless ($fileinfo->entry_id) {
-            $app->response_content_type($app->content_type_by_template_identifier($object->identifier));
+            $app->response_content_type($app->content_type_by_extension($object->outfile));
         }
     } else {
         $file_path = $ENV{DOCUMENT_ROOT} . $script_name;
@@ -105,7 +106,7 @@ sub render_as_string {
 
     my $fh = IO::File->new($file_path, 'r');
     unless (defined($fh)) {
-        die("Page [ $file_path ] does not found");
+        die('Page [ ' . $app->script_name() . ' ] does not found');
     }
 
     my @contents = <$fh>;
@@ -138,47 +139,14 @@ sub rebuild {
             $params->{object}->modified_on =~
             /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/;
     my $t_object = localtime(timelocal($object_modified_on_sec,
-                                         $object_modified_on_min,
-                                         $object_modified_on_hour,
-                                         $object_modified_on_day,
-                                         $object_modified_on_month,
-                                         $object_modified_on_year));
+                                       $object_modified_on_min,
+                                       $object_modified_on_hour,
+                                       $object_modified_on_day,
+                                       $object_modified_on_month - 1,
+                                       $object_modified_on_year));
     if ($t_file < $t_object) {
         MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
         return;
-    }
-}
-
-sub content_type_by_template_identifier {
-    my $app = shift;
-    my $template_indentifier = shift;
-
-    if ($template_indentifier eq 'main_index') {
-        return 'text/html';
-    }
-
-    if ($template_indentifier eq 'archive_index') {
-        return 'text/html';
-    }
-
-    if ($template_indentifier eq 'styles') {
-        return 'text/css';
-    }
-
-    if ($template_indentifier eq 'javascript') {
-        return 'application/x-javascript';
-    }
-
-    if ($template_indentifier eq 'feed_recent' or $template_indentifier eq 'atom') {
-        return 'application/atom+xml';
-    }
-
-    if ($template_indentifier eq 'rsd') {
-        return 'application/rsd+xml';
-    }
-
-    if ($template_indentifier eq 'rss') {
-        return 'application/rss+xml';
     }
 }
 
