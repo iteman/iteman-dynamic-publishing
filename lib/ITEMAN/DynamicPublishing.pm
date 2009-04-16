@@ -46,24 +46,11 @@ sub publish {
         $script_name .= 'index.html'; # FIXME: an extension point
     }
 
-    my @fileinfos = MT->model('fileinfo')->search(
-        { url => $script_name,
-          blog_id => $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID} },
-        { limit => 1 }
-        );
-
+    my $fileinfo = $app->_fileinfo($script_name);
     my $file_path;
-    if (@fileinfos) {
-        my $fileinfo = $fileinfos[0];
-        my $object;
-
-        if ($fileinfo->entry_id) {
-            $object = MT->model('entry')->lookup($fileinfo->entry_id);
-        } else {
-            $object = MT->model('template')->lookup($fileinfo->template_id);
-        }
-
-        unless (defined($object)) {
+    if ($fileinfo) {
+        my $object = $app->_object($fileinfo);
+        unless ($object) {
             $app->response_code('500');
             return $app->errtrans("Page [ $script_name ] does not found");
         }
@@ -95,7 +82,7 @@ sub publish {
         return $app->errtrans($@);
     }
 
-    return $content;
+    $content;
 }
 
 sub render_as_string {
@@ -112,7 +99,7 @@ sub render_as_string {
     my @contents = <$fh>;
     undef($fh);
 
-    return join('', @contents);
+    join('', @contents);
 }
 
 sub rebuild {
@@ -146,7 +133,6 @@ sub rebuild {
                                        $object_modified_on_year));
     if ($t_file < $t_object) {
         MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
-        return;
     }
 }
 
@@ -157,8 +143,7 @@ sub content_type_by_extension {
     my $file_path = shift;
 
     my ($mime_type, $encoding) = by_suffix($file_path);
-
-    return $mime_type;
+    $mime_type;
 }
 
 sub script_name {
@@ -184,7 +169,7 @@ sub script_name {
         return substr($script_name, 0, $position_of_pathinfo);
     }
 
-    return $script_name;
+    $script_name;
 }
 
 sub relative_uri {
@@ -210,7 +195,35 @@ sub relative_uri {
         $path_info = encode_url($path_info);
     }
 
-    return "$script_name$path_info$query_string";
+    "$script_name$path_info$query_string";
+}
+
+sub _fileinfo {
+    my $app = shift;
+    my $script_name = shift;
+
+    my @fileinfos = MT->model('fileinfo')->search(
+        { url => $script_name,
+          blog_id => $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID} },
+        { limit => 1 }
+        );
+
+    unless (@fileinfos) {
+        return undef;
+    }
+
+    $fileinfos[0];
+}
+
+sub _object {
+    my $app = shift;
+    my $fileinfo = shift;
+
+    if ($fileinfo->entry_id) {
+        MT->model('entry')->lookup($fileinfo->entry_id);
+    } else {
+        MT->model('template')->lookup($fileinfo->template_id);
+    }
 }
 
 1;
