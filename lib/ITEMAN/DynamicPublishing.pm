@@ -41,7 +41,7 @@ sub publish {
         return $app->errtrans('Invalid configuration');
     }
 
-    my $script_name = $app->script_name();
+    my $script_name = $app->_script_name();
     if ($script_name =~ m!/$!) {
         $script_name .= 'index.html'; # FIXME: an extension point
     }
@@ -55,7 +55,7 @@ sub publish {
             return $app->errtrans("Page [ $script_name ] does not found");
         }
 
-        $app->rebuild({ fileinfo => $fileinfo, object => $object });
+        $app->_rebuild({ fileinfo => $fileinfo, object => $object });
 
         if (-f $fileinfo->file_path) {
             $file_path = $fileinfo->file_path;
@@ -64,16 +64,16 @@ sub publish {
         }
 
         unless ($fileinfo->entry_id) {
-            $app->response_content_type($app->content_type_by_extension($object->outfile));
+            $app->response_content_type($app->_content_type_by_extension($object->outfile));
         }
     } else {
         $file_path = $ENV{DOCUMENT_ROOT} . $script_name;
-        $app->response_content_type($app->content_type_by_extension($file_path));
+        $app->response_content_type($app->_content_type_by_extension($file_path));
     }
 
     my $content;
     eval {
-        $content = $app->render_as_string($file_path);
+        $content = $app->_render_as_string($file_path);
     };
 
     if ($@) {
@@ -85,7 +85,7 @@ sub publish {
     $content;
 }
 
-sub render_as_string {
+sub _render_as_string {
     use IO::File;
 
     my $app = shift;
@@ -93,7 +93,7 @@ sub render_as_string {
 
     my $fh = IO::File->new($file_path, 'r');
     unless (defined($fh)) {
-        die('Page [ ' . $app->script_name() . ' ] does not found');
+        die('Page [ ' . $app->_script_name() . ' ] does not found');
     }
 
     my @contents = <$fh>;
@@ -102,7 +102,7 @@ sub render_as_string {
     join('', @contents);
 }
 
-sub rebuild {
+sub _rebuild {
     my $app = shift;
     my $params = shift;
 
@@ -136,7 +136,7 @@ sub rebuild {
     }
 }
 
-sub content_type_by_extension {
+sub _content_type_by_extension {
     use MIME::Types qw(by_suffix import_mime_types);
 
     my $app = shift;
@@ -146,11 +146,11 @@ sub content_type_by_extension {
     $mime_type;
 }
 
-sub script_name {
+sub _script_name {
     my $app = shift;
 
     my $script_name;
-    my $relative_uri = $app->relative_uri();
+    my $relative_uri = $app->_relative_uri();
     my $position_of_question = index($relative_uri, '?');
     unless ($position_of_question == -1) {
         $script_name = substr($relative_uri, 0, $position_of_question);
@@ -172,7 +172,7 @@ sub script_name {
     $script_name;
 }
 
-sub relative_uri {
+sub _relative_uri {
     my $app = shift;
 
     if (exists($ENV{REQUEST_URI})) {
