@@ -265,6 +265,7 @@ sub _object {
 
     if ($fileinfo->entry_id) {
         require MT::Entry;
+        require MT::Page;
 
         $app->_cache($app->_cache_id('entry', $fileinfo->entry_id),
                      sub {
