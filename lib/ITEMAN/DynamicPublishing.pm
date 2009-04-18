@@ -148,13 +148,18 @@ sub _rebuild {
 }
 
 sub _content_type_by_extension {
-    use MIME::Types qw(by_suffix import_mime_types);
+    require File::Basename;
 
     my $app = shift;
     my $file_path = shift;
 
-    my ($mime_type, $encoding) = by_suffix($file_path);
-    $mime_type;
+    my ($file_extension) = $file_path =~ m/\.([^.]+)$/;
+
+    return 'application/octet-stream' unless defined($file_extension);
+    return 'text/html' if $file_extension eq 'html';
+    return 'text/css' if $file_extension eq 'css';
+    return 'text/javascript' if $file_extension eq 'js';
+    return 'application/xml' if $file_extension eq 'xml';
 }
 
 sub _script_name {
