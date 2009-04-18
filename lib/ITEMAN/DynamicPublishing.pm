@@ -82,7 +82,25 @@ sub publish {
         return $app->errtrans($@);
     }
 
-    $content;
+    {
+        require File::stat;
+        require HTTP::Date;
+        require Digest::MD5;
+
+        $app->set_header('Last-Modified' => HTTP::Date::time2str(File::stat::stat($file_path)->mtime));
+        $app->set_header('ETag' => Digest::MD5::md5_hex($content));
+
+        if (exists($ENV{HTTP_IF_MODIFIED_SINCE})
+            and $ENV{HTTP_IF_MODIFIED_SINCE} eq HTTP::Date::time2str(File::stat::stat($file_path)->mtime)
+            and exists($ENV{HTTP_IF_NONE_MATCH})
+            and $ENV{HTTP_IF_NONE_MATCH} eq Digest::MD5::md5_hex($content)
+            ) {
+            $app->response_code('304');
+            return;
+        }
+
+        $content;
+    }
 }
 
 sub _render_as_string {
