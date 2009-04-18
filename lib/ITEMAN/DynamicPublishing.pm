@@ -49,6 +49,35 @@ sub publish {
     my $fileinfo = $app->_fileinfo($script_name);
     my $file_path;
     if ($fileinfo) {
+        {
+            require HTTP::Date;
+            require Time::Local;
+
+            my $blog = $app->_blog();
+
+            my ($object_modified_on_year,
+                $object_modified_on_month,
+                $object_modified_on_day,
+                $object_modified_on_hour,
+                $object_modified_on_min,
+                $object_modified_on_sec) =
+                    $blog->children_modified_on =~
+                    /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/;
+            my $object_mtime = Time::Local::timelocal($object_modified_on_sec,
+                                                      $object_modified_on_min,
+                                                      $object_modified_on_hour,
+                                                      $object_modified_on_day,
+                                                      $object_modified_on_month - 1,
+                                                      $object_modified_on_year);
+
+            if (exists($ENV{HTTP_IF_MODIFIED_SINCE})
+                and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= $object_mtime
+                ) {
+                $app->response_code('304');
+                return;
+            }
+        }
+
         my $object = $app->_object($fileinfo);
         unless ($object) {
             $app->response_code('500');
@@ -255,6 +284,19 @@ sub _fileinfo {
                      }
 
                      $fileinfos[0];
+                 }
+        );
+}
+
+sub _blog {
+    require MT::Blog;
+
+    my $app = shift;
+
+    $app->_cache($app->_cache_id('blog', $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}),
+                 sub {
+                     require MT;
+                     MT->model('blog')->lookup($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID});
                  }
         );
 }
