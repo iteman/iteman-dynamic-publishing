@@ -41,7 +41,7 @@ sub publish {
         return $app->errtrans('Invalid configuration');
     }
 
-    my $script_name = $app->_script_name();
+    my $script_name = $app->_script_name;
     if ($script_name =~ m!/$!) {
         $script_name .= 'index.html'; # FIXME: an extension point
     }
@@ -86,14 +86,14 @@ sub publish {
 }
 
 sub _render_as_string {
-    use IO::File;
+    require IO::File;
 
     my $app = shift;
     my $file_path = shift;
 
     my $fh = IO::File->new($file_path, 'r');
     unless (defined($fh)) {
-        die('Page [ ' . $app->_script_name() . ' ] does not found');
+        die('Page [ ' . $app->_script_name . ' ] does not found');
     }
 
     my @contents = <$fh>;
@@ -150,23 +150,21 @@ sub _script_name {
     my $app = shift;
 
     my $script_name;
-    my $relative_uri = $app->_relative_uri();
-    my $position_of_question = index($relative_uri, '?');
+    my $position_of_question = index($app->_relative_uri, '?');
     unless ($position_of_question == -1) {
-        $script_name = substr($relative_uri, 0, $position_of_question);
+        $script_name = substr($app->_relative_uri, 0, $position_of_question);
     } else {
-        $script_name = $relative_uri;
+        $script_name = $app->_relative_uri;
     }
 
-    my $path_info = $app->path_info();
-    unless (length($path_info)) {
+    unless (length($app->path_info)) {
         return $script_name;
     }
 
     {
         require MT::Util;
 
-        my $position_of_pathinfo = index($script_name, MT::Util::encode_url($path_info));;
+        my $position_of_pathinfo = index($script_name, MT::Util::encode_url($app->path_info));;
         unless ($position_of_pathinfo == -1) {
             return substr($script_name, 0, $position_of_pathinfo);
         }
@@ -187,12 +185,12 @@ sub _relative_uri {
     my $script_name = $ENV{MOD_PERL} ? $app->{apache}->uri : $ENV{SCRIPT_NAME};
     $script_name =~ s!//!/!g;
 
-    my $query_string = $app->query_string();
+    my $query_string = $app->query_string;
     if (length($query_string)) {
         $query_string = "?$query_string";
     }
 
-    my $path_info = $app->path_info();
+    my $path_info = $app->path_info;
     if (length($path_info)) {
         require MT::Util;
 
