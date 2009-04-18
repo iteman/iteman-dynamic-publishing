@@ -103,6 +103,8 @@ sub _render_as_string {
 }
 
 sub _rebuild {
+    require MT;
+
     my $app = shift;
     my $params = shift;
 
@@ -111,28 +113,37 @@ sub _rebuild {
         return;
     }
 
-    use File::stat;
-    my $st = stat($params->{fileinfo}->file_path) or return;
+    my $st;
+    {
+        require File::stat;
 
-    use Time::Piece;
-    use Time::Local;
-    my $t_file = localtime($st->mtime);
-    my ($object_modified_on_year,
-        $object_modified_on_month,
-        $object_modified_on_day,
-        $object_modified_on_hour,
-        $object_modified_on_min,
-        $object_modified_on_sec) =
-            $params->{object}->modified_on =~
-            /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/;
-    my $t_object = localtime(timelocal($object_modified_on_sec,
-                                       $object_modified_on_min,
-                                       $object_modified_on_hour,
-                                       $object_modified_on_day,
-                                       $object_modified_on_month - 1,
-                                       $object_modified_on_year));
-    if ($t_file < $t_object) {
-        MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
+        $st = File::stat::stat($params->{fileinfo}->file_path);
+        unless ($st) {
+            MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
+            return;
+        }
+    }
+
+    {
+        require Time::Local;
+
+        my ($object_modified_on_year,
+            $object_modified_on_month,
+            $object_modified_on_day,
+            $object_modified_on_hour,
+            $object_modified_on_min,
+            $object_modified_on_sec) =
+                $params->{object}->modified_on =~
+                /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/;
+        my $object_mtime = Time::Local::timelocal($object_modified_on_sec,
+                                                  $object_modified_on_min,
+                                                  $object_modified_on_hour,
+                                                  $object_modified_on_day,
+                                                  $object_modified_on_month - 1,
+                                                  $object_modified_on_year);
+        if ($st->mtime < $object_mtime) {
+            MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
+        }
     }
 }
 
@@ -208,6 +219,8 @@ sub _fileinfo {
 
     $app->_cache($app->_cache_id('fileinfo', $script_name, $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}),
                  sub {
+                     require MT;
+
                      my @fileinfos = MT->model('fileinfo')->search(
                          { url => $script_name,
                            blog_id => $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID} },
@@ -231,13 +244,19 @@ sub _object {
         require MT::Entry;
 
         $app->_cache($app->_cache_id('entry', $fileinfo->entry_id),
-                     sub { MT->model('entry')->lookup($fileinfo->entry_id) }
+                     sub {
+                         require MT;
+                         MT->model('entry')->lookup($fileinfo->entry_id);
+                     }
             );
     } else {
         require MT::Template;
 
         $app->_cache($app->_cache_id('template', $fileinfo->template_id),
-                     sub { MT->model('template')->lookup($fileinfo->template_id) }
+                     sub {
+                         require MT;
+                         MT->model('template')->lookup($fileinfo->template_id);
+                     }
             );
     }
 }
@@ -251,7 +270,7 @@ sub _cache {
     my $object_loader = shift;
 
     my $cache_dir = '/tmp/iteman-dynamic-publishing'; # FIXME: an extension point
-    my $fmgr = MT::FileMgr->new('Local') or die MT::FileMgr->errstr;
+    my $fmgr = MT::FileMgr->new('Local');
 
     unless ($fmgr->exists($cache_dir)) {
         $fmgr->mkpath($cache_dir);
