@@ -91,7 +91,7 @@ sub publish {
         $app->set_header('ETag' => Digest::MD5::md5_hex($content));
 
         if (exists($ENV{HTTP_IF_MODIFIED_SINCE})
-            and $ENV{HTTP_IF_MODIFIED_SINCE} eq HTTP::Date::time2str(File::stat::stat($file_path)->mtime)
+            and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= File::stat::stat($file_path)->mtime
             and exists($ENV{HTTP_IF_NONE_MATCH})
             and $ENV{HTTP_IF_NONE_MATCH} eq Digest::MD5::md5_hex($content)
             ) {
