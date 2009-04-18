@@ -163,13 +163,16 @@ sub _script_name {
         return $script_name;
     }
 
-    use MT::Util qw(encode_url);
-    my $position_of_pathinfo = index($script_name, encode_url($path_info));;
-    unless ($position_of_pathinfo == -1) {
-        return substr($script_name, 0, $position_of_pathinfo);
-    }
+    {
+        require MT::Util;
 
-    $script_name;
+        my $position_of_pathinfo = index($script_name, MT::Util::encode_url($path_info));;
+        unless ($position_of_pathinfo == -1) {
+            return substr($script_name, 0, $position_of_pathinfo);
+        }
+
+        $script_name;
+    }
 }
 
 sub _relative_uri {
@@ -191,28 +194,35 @@ sub _relative_uri {
 
     my $path_info = $app->path_info();
     if (length($path_info)) {
-        use MT::Util qw(encode_url);
-        $path_info = encode_url($path_info);
+        require MT::Util;
+
+        $path_info = MT::Util::encode_url($path_info);
     }
 
     "$script_name$path_info$query_string";
 }
 
 sub _fileinfo {
+    require MT::FileInfo;
+
     my $app = shift;
     my $script_name = shift;
 
-    my @fileinfos = MT->model('fileinfo')->search(
-        { url => $script_name,
-          blog_id => $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID} },
-        { limit => 1 }
+    $app->_cache($app->_cache_id('fileinfo', $script_name, $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}),
+                 sub {
+                     my @fileinfos = MT->model('fileinfo')->search(
+                         { url => $script_name,
+                           blog_id => $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID} },
+                         { limit => 1 }
+                         );
+
+                     unless (@fileinfos) {
+                         return undef;
+                     }
+
+                     $fileinfos[0];
+                 }
         );
-
-    unless (@fileinfos) {
-        return undef;
-    }
-
-    $fileinfos[0];
 }
 
 sub _object {
@@ -220,10 +230,55 @@ sub _object {
     my $fileinfo = shift;
 
     if ($fileinfo->entry_id) {
-        MT->model('entry')->lookup($fileinfo->entry_id);
+        require MT::Entry;
+
+        $app->_cache($app->_cache_id('entry', $fileinfo->entry_id),
+                     sub { MT->model('entry')->lookup($fileinfo->entry_id) }
+            );
     } else {
-        MT->model('template')->lookup($fileinfo->template_id);
+        require MT::Template;
+
+        $app->_cache($app->_cache_id('template', $fileinfo->template_id),
+                     sub { MT->model('template')->lookup($fileinfo->template_id) }
+            );
     }
+}
+
+sub _cache {
+    require MT::FileMgr;
+    require MT::Serialize;
+
+    my $app = shift;
+    my $cache_id = shift;
+    my $object_loader = shift;
+
+    my $cache_dir = '/tmp/iteman-dynamic-publishing'; # FIXME: an extension point
+    my $fmgr = MT::FileMgr->new('Local') or die MT::FileMgr->errstr;
+
+    unless ($fmgr->exists($cache_dir)) {
+        $fmgr->mkpath($cache_dir);
+    }
+
+    my $cache_file = "$cache_dir/$cache_id";
+    my $object;
+
+    unless ($fmgr->exists($cache_file)) {
+        $object = $object_loader->();
+        $fmgr->put_data(MT::Serialize->new('Storable')->serialize(\$object), $cache_file);
+    } else {
+        $object = ${ MT::Serialize->new('Storable')->unserialize($fmgr->get_data($cache_file)) };
+    }
+
+    $object;
+}
+
+sub _cache_id {
+    require MT::Util;
+
+    my $app = shift;
+    my @sources = @_;
+
+    return MT::Util::perl_sha1_digest_hex(join('', @_));
 }
 
 1;
