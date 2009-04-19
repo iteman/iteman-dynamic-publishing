@@ -45,7 +45,8 @@ sub publish {
 
     my $script_name = $app->_script_name;
     if ($script_name =~ m!/$!) {
-        $script_name .= 'index.html'; # FIXME: an extension point
+        $script_name .= MT->component('itemandynamicpublishing')
+                          ->get_config_value('directory_index');
     }
 
     my $fileinfo = $app->_fileinfo($script_name);
