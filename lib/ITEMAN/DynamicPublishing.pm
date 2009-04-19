@@ -38,7 +38,7 @@ sub publish {
 
     unless (exists($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID})) {
         $app->response_code('500');
-        return $app->errtrans('Invalid configuration');
+        return $app->errtrans('Application not configured');
     }
 
     $app->blog($app->_blog($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}));
@@ -66,7 +66,7 @@ sub publish {
                                           : $app->_template($fileinfo->template_id);
         unless ($object) {
             $app->response_code('500');
-            return $app->errtrans("Page [ $script_name ] does not found");
+            return $app->errtrans('Page not consistent - ' . $script_name);
         }
 
         $app->_rebuild({ fileinfo => $fileinfo, object => $object });
@@ -124,7 +124,7 @@ sub _render_as_string {
 
     my $fh = IO::File->new($file_path, 'r');
     unless (defined($fh)) {
-        die('Page [ ' . $app->_script_name . ' ] does not found');
+        die('Page not found - ' . $app->_script_name);
     }
 
     my @contents = <$fh>;
