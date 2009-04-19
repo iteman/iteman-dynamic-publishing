@@ -41,7 +41,7 @@ sub publish {
         return $app->errtrans('Invalid configuration');
     }
 
-    $app->blog($app->_blog());
+    $app->blog($app->_blog($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}));
 
     my $script_name = $app->_script_name;
     if ($script_name =~ m!/$!) {
@@ -243,13 +243,13 @@ sub _fileinfo {
     my $app = shift;
     my $script_name = shift;
 
-    $app->_cache($app->_cache_id('fileinfo', $script_name, $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}),
+    $app->_cache($app->_cache_id('fileinfo', $script_name, $app->blog->id),
                  sub {
                      require MT;
 
                      my @fileinfos = MT->model('fileinfo')->search(
                          { url => $script_name,
-                           blog_id => $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID} },
+                           blog_id => $app->blog->id },
                          { limit => 1 }
                          );
 
@@ -266,11 +266,12 @@ sub _blog {
     require MT::Blog;
 
     my $app = shift;
+    my $blog_id = shift;
 
-    $app->_cache($app->_cache_id('blog', $ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}),
+    $app->_cache($app->_cache_id('blog', $blog_id),
                  sub {
                      require MT;
-                     MT->model('blog')->lookup($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID});
+                     MT->model('blog')->lookup($blog_id);
                  }
         );
 }
