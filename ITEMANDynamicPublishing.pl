@@ -35,7 +35,7 @@ our $VERSION = '0.1.0';
     my $author_link = 'http://iteman.jp/';
     my $settings = [
         [ 'directory_index', { Default => 'index.html', Scope => 'system'} ],
-        [ 'cache_directory', { Default => File::Spec->catdir(File::Spec->tmpdir(), $id), Scope => 'system'} ],
+        [ 'cache_directory', { Default => File::Spec->catdir(File::Spec->tmpdir(), "$id-cache"), Scope => 'system'} ],
         ];
 
     MT->add_plugin(__PACKAGE__->new({
