@@ -52,13 +52,9 @@ sub publish {
     my $file_path;
     if ($fileinfo) {
         {
-            require HTTP::Date;
-            require MT::Util;
+            if ($app->_blog_not_modified) {
+                require Digest::MD5;
 
-            if (exists($ENV{HTTP_IF_MODIFIED_SINCE})
-                and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= MT::Util::ts2epoch($app->blog, $app->blog->children_modified_on)
-                and exists($ENV{HTTP_IF_NONE_MATCH})
-                ) {
                 $app->set_header('Last-Modified' => $ENV{HTTP_IF_MODIFIED_SINCE});
                 $app->set_header('ETag' => Digest::MD5::md5_hex($ENV{HTTP_IF_NONE_MATCH}));
                 $app->response_code('304');
@@ -105,14 +101,13 @@ sub publish {
         require HTTP::Date;
         require Digest::MD5;
 
-        $app->set_header('Last-Modified' => HTTP::Date::time2str(File::stat::stat($file_path)->mtime));
-        $app->set_header('ETag' => Digest::MD5::md5_hex($content));
+        my $last_modified = HTTP::Date::time2str(File::stat::stat($file_path)->mtime);
+        my $etag = Digest::MD5::md5_hex($content);
+        $app->set_header('Last-Modified' => $last_modified);
+        $app->set_header('ETag' => $etag);
+        $app->set_header('Content-Length' => length($content));
 
-        if (exists($ENV{HTTP_IF_MODIFIED_SINCE})
-            and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= File::stat::stat($file_path)->mtime
-            and exists($ENV{HTTP_IF_NONE_MATCH})
-            and $ENV{HTTP_IF_NONE_MATCH} eq Digest::MD5::md5_hex($content)
-            ) {
+        if ($app->_content_not_modified) {
             $app->response_code('304');
             return;
         }
@@ -344,6 +339,28 @@ sub _cache_id {
     my @sources = @_;
 
     return MT::Util::perl_sha1_digest_hex(join('', @_));
+}
+
+sub _blog_not_modified {
+    require HTTP::Date;
+    require MT::Util;
+
+    my $app = shift;
+
+    exists($ENV{HTTP_IF_MODIFIED_SINCE})
+        and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= MT::Util::ts2epoch($app->blog, $app->blog->children_modified_on)
+        and exists($ENV{HTTP_IF_NONE_MATCH});
+}
+
+sub _content_not_modified {
+    require HTTP::Date;
+
+    my $app = shift;
+
+    exists($ENV{HTTP_IF_MODIFIED_SINCE})
+        and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= HTTP::Date::str2time($app->get_header('Last-Modified'))
+        and exists($ENV{HTTP_IF_NONE_MATCH})
+        and $ENV{HTTP_IF_NONE_MATCH} eq $app->get_header('ETag');
 }
 
 1;
