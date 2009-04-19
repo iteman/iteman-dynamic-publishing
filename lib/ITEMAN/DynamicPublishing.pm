@@ -66,7 +66,8 @@ sub publish {
             }
         }
 
-        my $object = $app->_object($fileinfo);
+        my $object =  $fileinfo->entry_id ? $app->_entry($fileinfo->entry_id)
+                                          : $app->_template($fileinfo->template_id);
         unless ($object) {
             $app->response_code('500');
             return $app->errtrans("Page [ $script_name ] does not found");
@@ -276,30 +277,33 @@ sub _blog {
         );
 }
 
-sub _object {
+sub _entry {
+    require MT::Entry;
+    require MT::Page;
+
     my $app = shift;
-    my $fileinfo = shift;
+    my $entry_id = shift;
 
-    if ($fileinfo->entry_id) {
-        require MT::Entry;
-        require MT::Page;
+    $app->_cache($app->_cache_id('entry', $entry_id),
+                 sub {
+                     require MT;
+                     MT->model('entry')->lookup($entry_id);
+                 }
+        );
+}
 
-        $app->_cache($app->_cache_id('entry', $fileinfo->entry_id),
-                     sub {
-                         require MT;
-                         MT->model('entry')->lookup($fileinfo->entry_id);
-                     }
-            );
-    } else {
-        require MT::Template;
+sub _template {
+    require MT::Template;
 
-        $app->_cache($app->_cache_id('template', $fileinfo->template_id),
-                     sub {
-                         require MT;
-                         MT->model('template')->lookup($fileinfo->template_id);
-                     }
-            );
-    }
+    my $app = shift;
+    my $template_id = shift;
+
+    $app->_cache($app->_cache_id('template', $template_id),
+                 sub {
+                     require MT;
+                     MT->model('template')->lookup($template_id);
+                 }
+        );
 }
 
 sub _cache {
