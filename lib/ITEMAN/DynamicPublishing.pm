@@ -244,23 +244,24 @@ sub _fileinfo {
     my $app = shift;
     my $script_name = shift;
 
-    $app->_cache($app->_cache_id('fileinfo', $script_name, $app->blog->id),
-                 sub {
-                     require MT;
+    $app->_cache({
+        'cache_id' => $app->_cache_id('fileinfo', $script_name, $app->blog->id),
+        'object_loader' => sub {
+            require MT;
 
-                     my @fileinfos = MT->model('fileinfo')->search(
-                         { url => $script_name,
-                           blog_id => $app->blog->id },
-                         { limit => 1 }
-                         );
+            my @fileinfos = MT->model('fileinfo')->search(
+                { url => $script_name,
+                  blog_id => $app->blog->id },
+                { limit => 1 }
+                );
 
-                     unless (@fileinfos) {
-                         return undef;
-                     }
+            unless (@fileinfos) {
+                return undef;
+            }
 
-                     $fileinfos[0];
-                 }
-        );
+            $fileinfos[0];
+        }
+                 });
 }
 
 sub _blog {
@@ -269,12 +270,13 @@ sub _blog {
     my $app = shift;
     my $blog_id = shift;
 
-    $app->_cache($app->_cache_id('blog', $blog_id),
-                 sub {
-                     require MT;
-                     MT->model('blog')->lookup($blog_id);
-                 }
-        );
+    $app->_cache({
+        'cache_id' => $app->_cache_id('blog', $blog_id),
+        'object_loader' => sub {
+            require MT;
+            MT->model('blog')->lookup($blog_id);
+        }
+                 });
 }
 
 sub _entry {
@@ -284,12 +286,13 @@ sub _entry {
     my $app = shift;
     my $entry_id = shift;
 
-    $app->_cache($app->_cache_id('entry', $entry_id),
-                 sub {
-                     require MT;
-                     MT->model('entry')->lookup($entry_id);
-                 }
-        );
+    $app->_cache({
+        'cache_id' => $app->_cache_id('entry', $entry_id),
+        'object_loader' => sub {
+            require MT;
+            MT->model('entry')->lookup($entry_id);
+        }
+                 });
 }
 
 sub _template {
@@ -298,12 +301,13 @@ sub _template {
     my $app = shift;
     my $template_id = shift;
 
-    $app->_cache($app->_cache_id('template', $template_id),
-                 sub {
-                     require MT;
-                     MT->model('template')->lookup($template_id);
-                 }
-        );
+    $app->_cache({
+        'cache_id' => $app->_cache_id('template', $template_id),
+        'object_loader' => sub {
+            require MT;
+            MT->model('template')->lookup($template_id);
+        }
+                 });
 }
 
 sub _cache {
@@ -311,8 +315,7 @@ sub _cache {
     require MT::Serialize;
 
     my $app = shift;
-    my $cache_id = shift;
-    my $object_loader = shift;
+    my $params = shift;
 
     my $cache_dir = '/tmp/iteman-dynamic-publishing'; # FIXME: an extension point
     my $fmgr = MT::FileMgr->new('Local');
@@ -321,11 +324,11 @@ sub _cache {
         $fmgr->mkpath($cache_dir);
     }
 
-    my $cache_file = "$cache_dir/$cache_id";
+    my $cache_file = $cache_dir . '/' . $params->{cache_id};
     my $object;
 
     unless ($fmgr->exists($cache_file)) {
-        $object = $object_loader->();
+        $object = $params->{object_loader}->();
         $fmgr->put_data(MT::Serialize->new('Storable')->serialize(\$object), $cache_file);
     } else {
         $object = ${ MT::Serialize->new('Storable')->unserialize($fmgr->get_data($cache_file)) };
