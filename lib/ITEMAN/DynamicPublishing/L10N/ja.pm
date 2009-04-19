@@ -24,7 +24,7 @@ use base qw( ITEMAN::DynamicPublishing::L10N::en_us );
 our %Lexicon = (
 
 # plugins/ITEMANDynamicPublishing/ITEMANDynamicPublishing.pl
-    'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.' => 'ITEMAN Dynamic Publishing は通常のパブリッシングワークフローで動的な Web ページを作成することを可能にします。ITEMAN Dynamic Publishing は Perl で書かれているため、あらゆるプラグインとともに使うことができます。',
+    'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.' => 'ITEMAN Dynamic Publishing は通常のパブリッシングワークフローによる動的な Web ページの作成を可能にします。ITEMAN Dynamic Publishing は Perl で書かれているため、あらゆるプラグインとともに使うことができます。',
     'Directory Index is required' => 'ディレクトリインデックスは必須です',
 
 # plugins/ITEMANDynamicPublishing/tmpl/system.tmpl
