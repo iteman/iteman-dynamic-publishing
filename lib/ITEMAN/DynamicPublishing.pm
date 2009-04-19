@@ -41,6 +41,8 @@ sub publish {
         return $app->errtrans('Invalid configuration');
     }
 
+    $app->blog($app->_blog());
+
     my $script_name = $app->_script_name;
     if ($script_name =~ m!/$!) {
         $script_name .= 'index.html'; # FIXME: an extension point
@@ -51,28 +53,14 @@ sub publish {
     if ($fileinfo) {
         {
             require HTTP::Date;
-            require Time::Local;
-
-            my $blog = $app->_blog();
-
-            my ($object_modified_on_year,
-                $object_modified_on_month,
-                $object_modified_on_day,
-                $object_modified_on_hour,
-                $object_modified_on_min,
-                $object_modified_on_sec) =
-                    $blog->children_modified_on =~
-                    /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/;
-            my $object_mtime = Time::Local::timelocal($object_modified_on_sec,
-                                                      $object_modified_on_min,
-                                                      $object_modified_on_hour,
-                                                      $object_modified_on_day,
-                                                      $object_modified_on_month - 1,
-                                                      $object_modified_on_year);
+            require MT::Util;
 
             if (exists($ENV{HTTP_IF_MODIFIED_SINCE})
-                and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= $object_mtime
+                and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= MT::Util::ts2epoch($app->blog, $app->blog->children_modified_on)
+                and exists($ENV{HTTP_IF_NONE_MATCH})
                 ) {
+                $app->set_header('Last-Modified' => $ENV{HTTP_IF_MODIFIED_SINCE});
+                $app->set_header('ETag' => Digest::MD5::md5_hex($ENV{HTTP_IF_NONE_MATCH}));
                 $app->response_code('304');
                 return;
             }
@@ -172,23 +160,9 @@ sub _rebuild {
     }
 
     {
-        require Time::Local;
+        require MT::Util;
 
-        my ($object_modified_on_year,
-            $object_modified_on_month,
-            $object_modified_on_day,
-            $object_modified_on_hour,
-            $object_modified_on_min,
-            $object_modified_on_sec) =
-                $params->{object}->modified_on =~
-                /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/;
-        my $object_mtime = Time::Local::timelocal($object_modified_on_sec,
-                                                  $object_modified_on_min,
-                                                  $object_modified_on_hour,
-                                                  $object_modified_on_day,
-                                                  $object_modified_on_month - 1,
-                                                  $object_modified_on_year);
-        if ($st->mtime < $object_mtime) {
+        if ($st->mtime < MT::Util::ts2epoch($app->blog, $params->{object}->modified_on)) {
             MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
         }
     }
