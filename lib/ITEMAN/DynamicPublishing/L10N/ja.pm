@@ -29,7 +29,7 @@ our %Lexicon = (
 
 # plugins/ITEMANDynamicPublishing/tmpl/system.tmpl
     'Directory Index' => 'ディレクトリインデックス',
-    'The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.' => 'ディレクトリインデックスのデフォルト値は index.html です。index.htm のように異なるディレクトリインデックスを利用する場合に限って、この設定を変更してください。',
+    'Directory Index represents the file name which is used if a file name does not included in the requested URI. The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.' => 'ディレクトリインデックスは、リクエストされた URI にファイル名が含まれない場合に使われるファイル名を表します。ディレクトリインデックスのデフォルト値は index.html です。index.htm のように異なるディレクトリインデックスを利用する場合に限って、この設定を変更してください。',
 );
 
 1;
