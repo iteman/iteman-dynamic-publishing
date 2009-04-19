@@ -25,6 +25,8 @@ use MT;
 our $VERSION = '0.1.0';
 
 {
+    require File::Spec;
+
     my $name = 'ITEMAN Dynamic Publishing';
     my $id = lc($name);
     $id =~ s/\s//g;
@@ -33,6 +35,7 @@ our $VERSION = '0.1.0';
     my $author_link = 'http://iteman.jp/';
     my $settings = [
         [ 'directory_index', { Default => 'index.html', Scope => 'system'} ],
+        [ 'cache_directory', { Default => File::Spec->catdir(File::Spec->tmpdir(), $id), Scope => 'system'} ],
         ];
 
     MT->add_plugin(__PACKAGE__->new({
@@ -60,6 +63,10 @@ sub save_config {
 
     if ($args->{directory_index} eq '') {
         return $plugin->error($plugin->translate('Directory Index is required'));
+    }
+
+    if ($args->{cache_directory} eq '') {
+        return $plugin->error($plugin->translate('Cache Directory is required'));
     }
 
     $plugin->SUPER::save_config(@_);

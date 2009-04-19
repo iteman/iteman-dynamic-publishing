@@ -313,7 +313,8 @@ sub _cache {
     my $app = shift;
     my $params = shift;
 
-    my $cache_dir = '/tmp/iteman-dynamic-publishing'; # FIXME: an extension point
+    my $cache_dir = MT->component('itemandynamicpublishing')
+                      ->get_config_value('cache_directory');
     my $fmgr = MT::FileMgr->new('Local');
 
     unless ($fmgr->exists($cache_dir)) {

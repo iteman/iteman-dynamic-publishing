@@ -13,3 +13,19 @@
     </div>
   </div>
 </div>
+
+<div class="field field-left-label pkg">
+  <div class="field-inner">
+    <div class="field-header">
+      <label for="idp_cache_directory"><MT_TRANS phrase="Cache Directory"></label>
+    </div>
+    <div class="field-content">
+      <div class="textarea-wrapper">
+        <input type="text" size="15" id="idp_cache_directory" name="cache_directory" value="<TMPL_VAR NAME=CACHE_DIRECTORY ESCAPE=HTML>" />
+      </div>
+      <p class="hint">
+        <MT_TRANS phrase="ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. The default value of Cache Directory dpends on the platform.">
+      </p>
+    </div>
+  </div>
+</div>

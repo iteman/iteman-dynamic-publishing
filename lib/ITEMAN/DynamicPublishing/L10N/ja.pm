@@ -26,10 +26,13 @@ our %Lexicon = (
 # plugins/ITEMANDynamicPublishing/ITEMANDynamicPublishing.pl
     'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.' => 'ITEMAN Dynamic Publishing は通常のパブリッシングワークフローによる動的な Web ページの作成を可能にします。ITEMAN Dynamic Publishing は Perl で書かれているため、あらゆるプラグインとともに使うことができます。',
     'Directory Index is required' => 'ディレクトリインデックスは必須です',
+    'Cache Directory is required' => 'キャッシュディレクトリ は必須です',
 
 # plugins/ITEMANDynamicPublishing/tmpl/system.tmpl
     'Directory Index' => 'ディレクトリインデックス',
     'Directory Index represents the file name which is used if a file name does not included in the requested URI. The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.' => 'ディレクトリインデックスは、リクエストされた URI にファイル名が含まれない場合に使われるファイル名を表します。ディレクトリインデックスのデフォルト値は index.html です。index.htm のように異なるディレクトリインデックスを利用する場合に限って、この設定を変更してください。',
+    'Cache Directory' => 'キャッシュディレクトリ',
+    'ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. The default value of Cache Directory dpends on the platform.' => 'ITEMAN Dynamic Publishing はパフォーマンス向上のためにデータベースへの問い合わせ結果をキャッシュします。キャッシュファイルは キャッシュディレクトリ によって指定されたディレクトリに書き込まれます。キャッシュディレクトリ のデフォルト値はプラットフォームに依存します。',
 );
 
 1;
