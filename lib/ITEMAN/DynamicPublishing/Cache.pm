@@ -58,6 +58,17 @@ sub cache_id {
     return MT::Util::perl_sha1_digest_hex(join('', @_));
 }
 
+sub clear {
+    require File::Path;
+
+    my $cache = shift;
+
+    my $errors;
+    File::Path::rmtree(MT->component('itemandynamicpublishing')
+                         ->get_config_value('cache_directory'),
+                       { error  => $errors, keep_root => 1 }
+        );
+}
 
 1;
 

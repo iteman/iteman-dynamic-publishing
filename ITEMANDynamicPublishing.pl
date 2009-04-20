@@ -61,6 +61,13 @@ sub save_config {
         return;
     }
 
+    if ($args->{clear_caches} eq 'true') {
+        require ITEMAN::DynamicPublishing::Cache;
+
+        ITEMAN::DynamicPublishing::Cache->new()->clear();
+        return;
+    }
+
     if ($args->{directory_index} eq '') {
         return $plugin->error($plugin->translate('Directory Index is required'));
     }

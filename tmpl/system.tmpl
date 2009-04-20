@@ -27,5 +27,9 @@
         <MT_TRANS phrase="ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. The default value of Cache Directory dpends on the platform.">
       </p>
     </div>
+    <div class="field-content">
+      <input type="hidden" name="clear_caches" value="false" />
+      <button onclick="this.form.clear_caches.value = 'true'; this.form.submit(); return false;" type="submit" mt:mode="save_plugin_config"><MT_TRANS phrase="Clear Caches"></button>
+    </div>
   </div>
 </div>

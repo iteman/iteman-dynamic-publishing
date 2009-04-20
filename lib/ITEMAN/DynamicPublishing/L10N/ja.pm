@@ -33,6 +33,7 @@ our %Lexicon = (
     'Directory Index represents the file name which is used if a file name does not included in the requested URI. The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.' => 'ディレクトリインデックス は、リクエストされた URI にファイル名が含まれない場合に使われるファイル名を表します。ディレクトリインデックス のデフォルト値は index.html です。index.htm のように異なる ディレクトリインデックス を利用する場合に限って、この設定を変更してください。',
     'Cache Directory' => 'キャッシュディレクトリ',
     'ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. The default value of Cache Directory dpends on the platform.' => 'ITEMAN Dynamic Publishing はパフォーマンス向上のためにデータベースへの問い合わせ結果をキャッシュします。キャッシュファイルは キャッシュディレクトリ によって指定されたディレクトリに書き込まれます。キャッシュディレクトリ のデフォルト値はプラットフォームに依存します。',
+    'Clear Caches' => 'キャッシュのクリア',
 );
 
 1;
