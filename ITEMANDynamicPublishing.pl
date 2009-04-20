@@ -67,7 +67,12 @@ sub save_config {
     if ($args->{clear_caches} eq 'true') {
         require ITEMAN::DynamicPublishing::Cache;
 
-        ITEMAN::DynamicPublishing::Cache->new()->clear();
+        my $cache_directory = MT->component('itemandynamicpublishing')
+                                ->get_config_value('cache_directory');
+        if (-d $cache_directory) {
+            ITEMAN::DynamicPublishing::Cache->new()->clear($cache_directory);
+        }
+
         return;
     }
 

@@ -59,15 +59,28 @@ sub cache_id {
 }
 
 sub clear {
-    require File::Path;
+    require IO::Dir;
+    require MT::FileMgr;
+    require File::Spec;
 
     my $cache = shift;
+    my $cache_directory = shift;
 
-    my $errors;
-    File::Path::rmtree(MT->component('itemandynamicpublishing')
-                         ->get_config_value('cache_directory'),
-                       { error  => $errors, keep_root => 1 }
-        );
+    my $d = IO::Dir->new($cache_directory);
+    unless ($d) {
+        return;
+    }
+
+    my $fmgr = MT::FileMgr->new('Local');
+    while (defined($_ = $d->read)) {
+        next if $_ eq '.' || $_ eq '..';
+        next if /^\./;
+        my $cache_file = File::Spec->catfile($cache_directory, $_);
+        next unless -f $cache_file;
+        $fmgr->delete($cache_file);
+    }
+
+    undef $d;
 }
 
 1;
