@@ -35,8 +35,8 @@ our %Lexicon = (
     'Cache Directory' => 'キャッシュディレクトリ',
     'ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. The default value of Cache Directory is tmp under the directory where this plug-in has been deployed. Cache Directory should be readable/writable by the web server.' => 'ITEMAN Dynamic Publishing はパフォーマンス向上のためにデータベースへの問い合わせ結果をキャッシュします。キャッシュファイルは キャッシュディレクトリ によって指定されたディレクトリに書き込まれます。キャッシュディレクトリ のデフォルト値はこのプラグインが配備されているディレクトリの下の tmp です。キャッシュディレクトリ は Web サーバから読み込み・書き込み可能でなければなりません。',
     'Clear Caches' => 'キャッシュのクリア',
-    'Error Page 404 (Not Found)' => 'エラーページ 404 (Not Found)',
-    'Error Page 500 (Internal Server Error)' => 'エラーページ 500 (Internal Server Error)',
+    'Error Pages' => 'エラーページ',
+    'Any error page can be specified for 404 and 505 errors. The value should be one of the absolute path of a HTML file, the absolute path of a MT template file, or a URI for redirection.' => '404 および 505 エラー用に任意のエラーページを指定することができます。値は HTML ファイルの絶対パス、MT テンプレートファイルの絶対パス、リダイレクション用 URI のいずれかでなければなりません。'
 );
 
 1;

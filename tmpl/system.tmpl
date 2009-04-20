@@ -34,28 +34,35 @@
   </div>
 </div>
 
-<div class="field field-left-label pkg">
-  <div class="field-inner">
-    <div class="field-header">
-      <label for="idp_error_page"><MT_TRANS phrase="Error Page 404 (Not Found)"></label>
-    </div>
-    <div class="field-content">
-      <div class="textarea-wrapper">
-        <input type="text" size="40" id="idp_error_page_404" name="error_page_404" value="<TMPL_VAR NAME=ERROR_PAGE_404 ESCAPE=HTML>" />
-      </div>
-    </div>
-  </div>
-</div>
+<fieldset>
+  <legend><MT_TRANS phrase="Error Pages"></legend>
+  <p class="hint">
+    <MT_TRANS phrase="Any error page can be specified for 404 and 505 errors. The value should be one of the absolute path of a HTML file, the absolute path of a MT template file, or a URI for redirection.">
+  </p>
 
-<div class="field field-left-label pkg">
-  <div class="field-inner">
-    <div class="field-header">
-      <label for="idp_error_page"><MT_TRANS phrase="Error Page 500 (Internal Server Error)"></label>
-    </div>
-    <div class="field-content">
-      <div class="textarea-wrapper">
-        <input type="text" size="40" id="idp_error_page_500" name="error_page_500" value="<TMPL_VAR NAME=ERROR_PAGE_500 ESCAPE=HTML>" />
+  <div class="field field-left-label pkg">
+    <div class="field-inner">
+      <div class="field-header">
+        <label for="idp_error_page"><MT_TRANS phrase="404 (Not Found)"></label>
+      </div>
+      <div class="field-content">
+        <div class="textarea-wrapper">
+          <input type="text" size="40" id="idp_error_page_404" name="error_page_404" value="<TMPL_VAR NAME=ERROR_PAGE_404 ESCAPE=HTML>" />
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+  <div class="field field-left-label pkg">
+    <div class="field-inner">
+      <div class="field-header">
+        <label for="idp_error_page"><MT_TRANS phrase="500 (Internal Server Error)"></label>
+      </div>
+      <div class="field-content">
+        <div class="textarea-wrapper">
+          <input type="text" size="40" id="idp_error_page_500" name="error_page_500" value="<TMPL_VAR NAME=ERROR_PAGE_500 ESCAPE=HTML>" />
+        </div>
+      </div>
+    </div>
+  </div>
+</fieldset>
