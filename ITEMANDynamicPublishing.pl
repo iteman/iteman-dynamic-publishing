@@ -49,7 +49,7 @@ our $VERSION = '0.1.0';
 
     my $settings = [
         [ 'directory_index', { Default => 'index.html', Scope => 'system'} ],
-        [ 'cache_directory', { Default => File::Spec->catdir(File::Spec->tmpdir(), "$id-cache"), Scope => 'system'} ],
+        [ 'cache_directory', { Default => File::Spec->catdir($plugin->{full_path}, 'tmp'), Scope => 'system'} ],
         [ 'error_page_404', { Default => File::Spec->catfile($plugin->{full_path}, 'tmpl', '404.tmpl'), Scope => 'system'} ],
         [ 'error_page_500', { Default => File::Spec->catfile($plugin->{full_path}, 'tmpl', '500.tmpl'), Scope => 'system'} ],
         ];
