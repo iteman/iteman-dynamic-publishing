@@ -236,12 +236,14 @@ sub _relative_uri {
 
 sub _fileinfo {
     require MT::FileInfo;
+    require ITEMAN::DynamicPublishing::Cache;
 
     my $app = shift;
     my $script_name = shift;
 
-    $app->_cache({
-        'cache_id' => $app->_cache_id('fileinfo', $script_name, $app->blog->id),
+    my $cache = ITEMAN::DynamicPublishing::Cache->new();
+    $cache->cache({
+        'cache_id' => $cache->cache_id('fileinfo', $script_name, $app->blog->id),
         'object_loader' => sub {
             require MT;
 
@@ -262,12 +264,14 @@ sub _fileinfo {
 
 sub _blog {
     require MT::Blog;
+    require ITEMAN::DynamicPublishing::Cache;
 
     my $app = shift;
     my $blog_id = shift;
 
-    $app->_cache({
-        'cache_id' => $app->_cache_id('blog', $blog_id),
+    my $cache = ITEMAN::DynamicPublishing::Cache->new();
+    $cache->cache({
+        'cache_id' => $cache->cache_id('blog', $blog_id),
         'object_loader' => sub {
             require MT;
             MT->model('blog')->lookup($blog_id);
@@ -278,12 +282,14 @@ sub _blog {
 sub _entry {
     require MT::Entry;
     require MT::Page;
+    require ITEMAN::DynamicPublishing::Cache;
 
     my $app = shift;
     my $entry_id = shift;
 
-    $app->_cache({
-        'cache_id' => $app->_cache_id('entry', $entry_id),
+    my $cache = ITEMAN::DynamicPublishing::Cache->new();
+    $cache->cache({
+        'cache_id' => $cache->cache_id('entry', $entry_id),
         'object_loader' => sub {
             require MT;
             MT->model('entry')->lookup($entry_id);
@@ -293,54 +299,19 @@ sub _entry {
 
 sub _template {
     require MT::Template;
+    require ITEMAN::DynamicPublishing::Cache;
 
     my $app = shift;
     my $template_id = shift;
 
-    $app->_cache({
-        'cache_id' => $app->_cache_id('template', $template_id),
+    my $cache = ITEMAN::DynamicPublishing::Cache->new();
+    $cache->cache({
+        'cache_id' => $cache->cache_id('template', $template_id),
         'object_loader' => sub {
             require MT;
             MT->model('template')->lookup($template_id);
         }
                  });
-}
-
-sub _cache {
-    require MT::FileMgr;
-    require MT::Serialize;
-
-    my $app = shift;
-    my $params = shift;
-
-    my $cache_dir = MT->component('itemandynamicpublishing')
-                      ->get_config_value('cache_directory');
-    my $fmgr = MT::FileMgr->new('Local');
-
-    unless ($fmgr->exists($cache_dir)) {
-        $fmgr->mkpath($cache_dir);
-    }
-
-    my $cache_file = $cache_dir . '/' . $params->{cache_id};
-    my $object;
-
-    unless ($fmgr->exists($cache_file)) {
-        $object = $params->{object_loader}->();
-        $fmgr->put_data(MT::Serialize->new('Storable')->serialize(\$object), $cache_file);
-    } else {
-        $object = ${ MT::Serialize->new('Storable')->unserialize($fmgr->get_data($cache_file)) };
-    }
-
-    $object;
-}
-
-sub _cache_id {
-    require MT::Util;
-
-    my $app = shift;
-    my @sources = @_;
-
-    return MT::Util::perl_sha1_digest_hex(join('', @_));
 }
 
 sub _blog_not_modified {
