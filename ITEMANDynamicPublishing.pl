@@ -43,7 +43,7 @@ our $VERSION = '0.1.0';
         id => $id,
         key => __PACKAGE__,
         description => "<MT_TRANS phrase=\"$description\">",
-        author_name => $author_name,
+        author_name => "<MT_TRANS phrase=\"$author_name\">",,
         author_link => $author_link,
         version => $VERSION,
         system_config_template => 'system.tmpl',
