@@ -105,7 +105,10 @@ sub publish {
         $app->set_header('ETag' => $etag);
         $app->set_header('Content-Length' => length($content));
 
-        if ($app->_content_not_modified) {
+        if ($app->_content_not_modified({ 'Last-Modified' => $last_modified,
+                                          'ETag' => $etag
+                                        })
+            ) {
             $app->response_code('304');
             return;
         }
@@ -326,11 +329,12 @@ sub _content_not_modified {
     require HTTP::Date;
 
     my $app = shift;
+    my $params = shift;
 
     exists($ENV{HTTP_IF_MODIFIED_SINCE})
-        and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= HTTP::Date::str2time($app->get_header('Last-Modified'))
+        and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= HTTP::Date::str2time($params->{'Last-Modified'})
         and exists($ENV{HTTP_IF_NONE_MATCH})
-        and $ENV{HTTP_IF_NONE_MATCH} eq $app->get_header('ETag');
+        and $ENV{HTTP_IF_NONE_MATCH} eq $params->{'ETag'};
 }
 
 sub _error_page {
