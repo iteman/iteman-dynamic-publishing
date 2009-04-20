@@ -35,6 +35,8 @@ our %Lexicon = (
     'Cache Directory' => 'キャッシュディレクトリ',
     'ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. The default value of Cache Directory dpends on the platform.' => 'ITEMAN Dynamic Publishing はパフォーマンス向上のためにデータベースへの問い合わせ結果をキャッシュします。キャッシュファイルは キャッシュディレクトリ によって指定されたディレクトリに書き込まれます。キャッシュディレクトリ のデフォルト値はプラットフォームに依存します。',
     'Clear Caches' => 'キャッシュのクリア',
+    'Error Page 404 (Not Found)' => 'エラーページ 404 (Not Found)',
+    'Error Page 500 (Internal Server Error)' => 'エラーページ 500 (Internal Server Error)',
 );
 
 1;

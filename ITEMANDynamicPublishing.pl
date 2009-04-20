@@ -33,12 +33,8 @@ our $VERSION = '0.1.0';
     my $description = 'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.';
     my $author_name = 'ITEMAN, Inc.';
     my $author_link = 'http://iteman.jp/';
-    my $settings = [
-        [ 'directory_index', { Default => 'index.html', Scope => 'system'} ],
-        [ 'cache_directory', { Default => File::Spec->catdir(File::Spec->tmpdir(), "$id-cache"), Scope => 'system'} ],
-        ];
 
-    MT->add_plugin(__PACKAGE__->new({
+    my $plugin = __PACKAGE__->new({
         name => $name,
         id => $id,
         key => __PACKAGE__,
@@ -47,10 +43,17 @@ our $VERSION = '0.1.0';
         author_link => $author_link,
         version => $VERSION,
         system_config_template => 'system.tmpl',
-        settings => MT::PluginSettings->new($settings),
         l10n_class => 'ITEMAN::DynamicPublishing::L10N',
-                                    })
-        );
+                                  });
+    MT->add_plugin($plugin);
+
+    my $settings = [
+        [ 'directory_index', { Default => 'index.html', Scope => 'system'} ],
+        [ 'cache_directory', { Default => File::Spec->catdir(File::Spec->tmpdir(), "$id-cache"), Scope => 'system'} ],
+        [ 'error_page_404', { Default => File::Spec->catfile($plugin->{full_path}, 'tmpl', '404.tmpl'), Scope => 'system'} ],
+        [ 'error_page_500', { Default => File::Spec->catfile($plugin->{full_path}, 'tmpl', '500.tmpl'), Scope => 'system'} ],
+        ];
+    $plugin->{settings} = MT::PluginSettings->new($settings);
 }
 
 sub save_config {

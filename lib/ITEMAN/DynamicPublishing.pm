@@ -34,11 +34,12 @@ sub init {
 }
 
 sub publish {
+    require MT;
+
     my $app = shift;
 
     unless (exists($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID})) {
-        $app->response_code('500');
-        return $app->errtrans('Application not configured');
+        return $app->_error_page({ response_code => 500, fallback_message => 'Application not configured' });
     }
 
     $app->blog($app->_blog($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}));
@@ -66,8 +67,7 @@ sub publish {
         my $object =  $fileinfo->entry_id ? $app->_entry($fileinfo->entry_id)
                                           : $app->_template($fileinfo->template_id);
         unless ($object) {
-            $app->response_code('500');
-            return $app->errtrans('Page not consistent - ' . $script_name);
+            return $app->_error_page({ response_code => 500, fallback_message => 'Page not consistent - ' . $script_name});
         }
 
         $app->_rebuild({ fileinfo => $fileinfo, object => $object });
@@ -90,11 +90,8 @@ sub publish {
     eval {
         $content = $app->_render_as_string($file_path);
     };
-
     if ($@) {
-        $app->response_content_type('text/html');
-        $app->response_code('404');
-        return $app->errtrans($@);
+        return $app->_error_page({ response_code => 404, fallback_message => $@ });
     }
 
     {
@@ -334,6 +331,33 @@ sub _content_not_modified {
         and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= HTTP::Date::str2time($app->get_header('Last-Modified'))
         and exists($ENV{HTTP_IF_NONE_MATCH})
         and $ENV{HTTP_IF_NONE_MATCH} eq $app->get_header('ETag');
+}
+
+sub _error_page {
+    require MT;
+
+    my $app = shift;
+    my $params = shift;
+
+    my $error_page = MT->component('itemandynamicpublishing')
+                       ->get_config_value('error_page_' . $params->{response_code});
+    if ($error_page =~ m!^https?://!) {
+        return $app->redirect($error_page);
+    }
+
+    $app->response_content_type('text/html');
+    $app->response_code($params->{response_code});
+
+    my $tmpl = MT->component('itemandynamicpublishing')->load_tmpl($error_page);
+    unless ($tmpl) {
+        return $app->errtrans($params->{fallback_message});
+    }
+
+    $tmpl->param('idp_server_signature', $ENV{SERVER_SIGNATURE});
+    $tmpl->param('idp_server_admin', $ENV{SERVER_ADMIN});
+    $tmpl->param('idp_script_name', $app->_script_name());
+
+    $app->build_page_in_mem($tmpl);
 }
 
 1;
