@@ -23,15 +23,15 @@ use warnings;
 use File::Spec;
 use File::Basename;
 
-my %config_repos = (
+my %features_decl = (
     'error_page_404' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl'),
     'error_page_500' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '500.tmpl'),
     );
 
 sub new {
     my $class = shift;
-    my %config = %config_repos;
-    bless \%config, $class;
+    my %features = %features_decl;
+    bless \%features, $class;
 }
 
 sub DESTROY {}
@@ -44,6 +44,14 @@ sub AUTOLOAD {
     die "Use of undefined configuration $feature" unless exists $self->{$feature};
     $self->{$feature} = shift if @_;
     $self->{$feature};
+}
+
+sub default {
+    my $class = shift;
+    my $feature = shift;
+
+    die "Use of undefined configuration $feature" unless exists $features_decl{$feature};
+    $features_decl{$feature};
 }
 
 1;
