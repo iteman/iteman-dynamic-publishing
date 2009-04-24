@@ -71,6 +71,14 @@ sub save_config {
         return $plugin->error($plugin->translate('Directory Index is required'));
     }
 
+    if ($args->{error_page_404} eq '') {
+        return $plugin->error($plugin->translate('The error page for the status code 404 is required'));
+    }
+
+    if ($args->{error_page_500} eq '') {
+        return $plugin->error($plugin->translate('The error page for the status code 500 is required'));
+    }
+
     $plugin->SUPER::save_config(@_);
 
     my $config = ITEMAN::DynamicPublishing::Config->new;
