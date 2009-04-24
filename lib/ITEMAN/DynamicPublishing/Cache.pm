@@ -18,55 +18,67 @@
 package ITEMAN::DynamicPublishing::Cache;
 
 use strict;
+use warnings;
 
-sub new { bless {}, $_[0] }
+sub new {
+    my $class = shift;
+    bless {}, $class;
+}
 
 sub cache {
     require MT::FileMgr;
+    require ITEMAN::DynamicPublishing::Config;
     require MT::Serialize;
 
-    my $cache = shift;
+    my $self = shift;
     my $params = shift;
 
-    my $cache_dir = MT->component('itemandynamicpublishing')
-                      ->get_config_value('cache_directory');
     my $fmgr = MT::FileMgr->new('Local');
 
-    unless ($fmgr->exists($cache_dir)) {
-        $fmgr->mkpath($cache_dir);
+    unless ($fmgr->exists(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY)) {
+        $fmgr->mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
+        my $object = $params->{object_loader}->();
+        return $self->save({
+            cache_id => $params->{cache_id},
+            data => $object,
+                           });
     }
 
-    my $cache_file = $cache_dir . '/' . $params->{cache_id};
-    my $object;
+    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . $params->{cache_id};
 
     unless ($fmgr->exists($cache_file)) {
-        $object = $params->{object_loader}->();
-        $fmgr->put_data(MT::Serialize->new('Storable')->serialize(\$object), $cache_file);
-    } else {
-        $object = ${ MT::Serialize->new('Storable')->unserialize($fmgr->get_data($cache_file)) };
+        my $object = $params->{object_loader}->();
+        return $self->save({
+            cache_id => $params->{cache_id},
+            data => $object,
+                           });
     }
 
-    $object;
+    ${ MT::Serialize->new('Storable')->unserialize($fmgr->get_data($cache_file)) };
 }
 
 sub cache_id {
     require MT::Util;
 
-    my $cache = shift;
+    my $self = shift;
     my @sources = @_;
 
     return MT::Util::perl_sha1_digest_hex(join('', @_));
 }
 
 sub clear {
+    require ITEMAN::DynamicPublishing::Config;
     require IO::Dir;
     require MT::FileMgr;
     require File::Spec;
 
-    my $cache = shift;
-    my $cache_directory = shift;
+    my $self = shift;
 
-    my $d = IO::Dir->new($cache_directory);
+    unless (-d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY) {
+        return;
+    }
+
+    my $d = IO::Dir->new(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
     unless ($d) {
         return;
     }
@@ -75,12 +87,55 @@ sub clear {
     while (defined($_ = $d->read)) {
         next if $_ eq '.' || $_ eq '..';
         next if /^\./;
-        my $cache_file = File::Spec->catfile($cache_directory, $_);
+        my $cache_file = File::Spec->catfile(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, $_);
         next unless -f $cache_file;
         $fmgr->delete($cache_file);
     }
 
     undef $d;
+}
+
+sub save {
+    require MT::FileMgr;
+    require ITEMAN::DynamicPublishing::Config;
+    require MT::Serialize;
+
+    my $self = shift;
+    my $params = shift;
+
+    my $fmgr = MT::FileMgr->new('Local');
+
+    unless ($fmgr->exists(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY)) {
+        $fmgr->mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
+    }
+
+    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . $params->{cache_id};
+    $fmgr->put_data(
+        MT::Serialize->new('Storable')->serialize(\$params->{data}),
+        $cache_file
+        );
+
+    1;
+}
+
+sub load {
+    require MT::FileMgr;
+    require ITEMAN::DynamicPublishing::Config;
+    require MT::Serialize;
+
+    my $self = shift;
+    my $cache_id = shift;
+
+    my $fmgr = MT::FileMgr->new('Local');
+
+    return undef unless $fmgr->exists(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
+
+    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . $cache_id;
+    return undef unless $fmgr->exists($cache_file);
+    my $data = $fmgr->get_data($cache_file);
+    return undef unless $data;
+
+    ${ MT::Serialize->new('Storable')->unserialize($data) };
 }
 
 1;
