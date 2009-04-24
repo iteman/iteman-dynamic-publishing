@@ -20,23 +20,20 @@ package MT::Plugin::ITEMANDynamicPublishing;
 use strict;
 
 use base qw( MT::Plugin );
-use MT;
+use ITEMAN::DynamicPublishing::Config;
 
 our $VERSION = '0.1.0';
 
 {
-    require File::Spec;
+    require MT;
 
-    my $name = 'ITEMAN Dynamic Publishing';
-    my $id = lc($name);
-    $id =~ s/\s//g;
     my $description = 'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.';
     my $author_name = 'ITEMAN, Inc.';
     my $author_link = 'http://iteman.jp/';
 
     my $plugin = __PACKAGE__->new({
-        name => $name,
-        id => $id,
+        name => ITEMAN::DynamicPublishing::Config::PLUGIN_NAME,
+        id => ITEMAN::DynamicPublishing::Config::PLUGIN_ID,
         key => __PACKAGE__,
         description => "<MT_TRANS phrase=\"$description\">",
         author_name => "<MT_TRANS phrase=\"$author_name\">",,
@@ -48,15 +45,17 @@ our $VERSION = '0.1.0';
     MT->add_plugin($plugin);
 
     my $settings = [
-        [ 'directory_index', { Default => 'index.html', Scope => 'system'} ],
-        [ 'cache_directory', { Default => File::Spec->catdir($plugin->{full_path}, 'tmp'), Scope => 'system'} ],
-        [ 'error_page_404', { Default => File::Spec->catfile($plugin->{full_path}, 'tmpl', '404.tmpl'), Scope => 'system'} ],
-        [ 'error_page_500', { Default => File::Spec->catfile($plugin->{full_path}, 'tmpl', '500.tmpl'), Scope => 'system'} ],
+        [ 'directory_index', { Default => ITEMAN::DynamicPublishing::Config->default('directory_index'), Scope => 'system'} ],
+        [ 'cache_directory', { Default => ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, Scope => 'system'} ],
+        [ 'error_page_404', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_404'), Scope => 'system'} ],
+        [ 'error_page_500', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_500'), Scope => 'system'} ],
         ];
     $plugin->{settings} = MT::PluginSettings->new($settings);
 }
 
 sub save_config {
+    require ITEMAN::DynamicPublishing::Cache;
+
     my $plugin = shift;
     my ($args, $scope) = @_;
 
@@ -65,26 +64,25 @@ sub save_config {
     }
 
     if ($args->{clear_caches} eq 'true') {
-        require ITEMAN::DynamicPublishing::Cache;
-
-        my $cache_directory = MT->component('itemandynamicpublishing')
-                                ->get_config_value('cache_directory');
-        if (-d $cache_directory) {
-            ITEMAN::DynamicPublishing::Cache->new()->clear($cache_directory);
-        }
-
-        return;
+        return ITEMAN::DynamicPublishing::Cache->new->clear;
     }
 
     if ($args->{directory_index} eq '') {
         return $plugin->error($plugin->translate('Directory Index is required'));
     }
 
-    if ($args->{cache_directory} eq '') {
-        return $plugin->error($plugin->translate('Cache Directory is required'));
-    }
-
     $plugin->SUPER::save_config(@_);
+
+    my $config = ITEMAN::DynamicPublishing::Config->new;
+    $config->directory_index($args->{directory_index});
+    $config->error_page_404($args->{error_page_404});
+    $config->error_page_500($args->{error_page_500});
+
+    my $cache = ITEMAN::DynamicPublishing::Cache->new;
+    $cache->save({
+        cache_id => $cache->cache_id(ref($config)),
+        data => $config,
+                 });
 }
 
 1;
