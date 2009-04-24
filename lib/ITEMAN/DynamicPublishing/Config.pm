@@ -22,10 +22,16 @@ use warnings;
 
 use File::Spec;
 use File::Basename;
+use Cwd;
+
+use constant PLUGIN_NAME => 'ITEMAN Dynamic Publishing';
+use constant PLUGIN_ID => 'itemandynamicpublishing';
+use constant CACHE_DIRECTORY => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp'));
 
 my %features_decl = (
-    'error_page_404' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl'),
-    'error_page_500' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '500.tmpl'),
+    'directory_index' => 'index.html',
+    'error_page_404' => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl')),
+    'error_page_500' => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '500.tmpl')),
     );
 
 sub new {
