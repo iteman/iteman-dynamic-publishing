@@ -20,7 +20,9 @@ use strict;
 
 use lib "$ENV{MT_HOME}/lib";
 use lib "$ENV{MT_HOME}/plugins/ITEMANDynamicPublishing/lib";
-use MT::Bootstrap App => 'ITEMAN::DynamicPublishing';
+use ITEMAN::DynamicPublishing;
+
+ITEMAN::DynamicPublishing->new->publish();
 
 # Local Variables:
 # mode: perl
