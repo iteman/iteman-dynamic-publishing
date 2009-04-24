@@ -18,350 +18,97 @@
 package ITEMAN::DynamicPublishing;
 
 use strict;
+use warnings;
 
-use base qw( MT::App );
+use ITEMAN::DynamicPublishing::Config;
 
-sub id { __PACKAGE__ }
-
-sub init {
-    my $app = shift;
-    $app->SUPER::init(@_) or return;
-    $app->add_methods(
-        'publish' => \&publish
-    );
-    $app->{mode} = $app->{default_mode} = 'publish';
-    $app;
+sub new {
+    my $class = shift;
+    bless {}, $class;
 }
 
 sub publish {
-    require MT;
+    my $self = shift;
 
-    my $app = shift;
+    $self->_init_config unless $self->config;
+    $self->_init_mt unless $self->mt;
 
-    unless (exists($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID})) {
-        return $app->_error_page({ response_code => 500, fallback_message => 'Application not configured' });
-    }
-
-    $app->blog($app->_blog($ENV{ITEMAN_DYNAMIC_PUBLISHING_BLOG_ID}));
-
-    my $script_name = $app->_script_name;
-    if ($script_name =~ m!/$!) {
-        $script_name .= MT->component('itemandynamicpublishing')
-                          ->get_config_value('directory_index');
-    }
-
-    my $fileinfo = $app->_fileinfo($script_name);
-    my $file_path;
-    if ($fileinfo) {
-        {
-            if ($app->_blog_not_modified) {
-                require Digest::MD5;
-
-                $app->set_header('Last-Modified' => $ENV{HTTP_IF_MODIFIED_SINCE});
-                $app->set_header('ETag' => Digest::MD5::md5_hex($ENV{HTTP_IF_NONE_MATCH}));
-                $app->response_code('304');
-                return;
-            }
-        }
-
-        my $object =  $fileinfo->entry_id ? $app->_entry($fileinfo->entry_id)
-                                          : $app->_template($fileinfo->template_id);
-        unless ($object) {
-            return $app->_error_page({ response_code => 500, fallback_message => 'Page not consistent - ' . $script_name});
-        }
-
-        $app->_rebuild({ fileinfo => $fileinfo, object => $object });
-
-        if (-f $fileinfo->file_path) {
-            $file_path = $fileinfo->file_path;
-        } else {
-            $file_path = $ENV{DOCUMENT_ROOT} . $script_name;
-        }
-
-        unless ($fileinfo->entry_id) {
-            $app->response_content_type($app->_content_type_by_extension($object->outfile));
-        }
-    } else {
-        $file_path = $ENV{DOCUMENT_ROOT} . $script_name;
-        $app->response_content_type($app->_content_type_by_extension($file_path));
-    }
-
-    my $content;
-    eval {
-        $content = $app->_render_as_string($file_path);
-    };
-    if ($@) {
-        return $app->_error_page({ response_code => 404, fallback_message => $@ });
-    }
-
-    {
-        require File::stat;
-        require HTTP::Date;
-        require Digest::MD5;
-
-        my $last_modified = HTTP::Date::time2str(File::stat::stat($file_path)->mtime);
-        my $etag = Digest::MD5::md5_hex($content);
-        $app->set_header('Last-Modified' => $last_modified);
-        $app->set_header('ETag' => $etag);
-        $app->set_header('Content-Length' => length($content));
-
-        if ($app->_content_not_modified({ 'Last-Modified' => $last_modified,
-                                          'ETag' => $etag
-                                        })
-            ) {
-            $app->response_code('304');
-            return;
-        }
-
-        $content;
-    }
+    return $self->_error_page(500) unless exists $ENV{IDP_BLOG_ID};
 }
 
-sub _render_as_string {
-    require IO::File;
+sub redirect {
+    require HTTP::Status;
 
-    my $app = shift;
-    my $file_path = shift;
+    my $self = shift;
+    my $uri = shift;
 
-    my $fh = IO::File->new($file_path, 'r');
-    unless (defined($fh)) {
-        die('Page not found - ' . $app->_script_name);
-    }
-
-    my @contents = <$fh>;
-    undef($fh);
-
-    join('', @contents);
+    print 'Status: ', 302, ' ', status_message(302), "\n";
+    print 'Location: ', $uri, "\n";
 }
 
-sub _rebuild {
-    require MT;
+sub respond {
+    require HTTP::Status;
 
-    my $app = shift;
+    my $self = shift;
     my $params = shift;
 
-    unless (-f $params->{fileinfo}->file_path) {
-        MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
-        return;
-    }
-
-    my $st;
-    {
-        require File::stat;
-
-        $st = File::stat::stat($params->{fileinfo}->file_path);
-        unless ($st) {
-            MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
-            return;
-        }
-    }
-
-    {
-        require MT::Util;
-
-        if ($st->mtime < MT::Util::ts2epoch($app->blog, $params->{object}->modified_on)) {
-            MT->publisher->rebuild_from_fileinfo($params->{fileinfo});
-        }
-    }
+    print 'Status: ', $params->{status_code}, ' ', status_message($params->{status_code}), "\n";
+    print 'Content-Length: ', length($params->{response_body}), "\n";
+    print 'Content-Type: ', 'text/html', "\n";
+    print "\n";
+    print $params->{response_body};
 }
 
-sub _content_type_by_extension {
-    require File::Basename;
+sub mt {
+    my $self = shift;
 
-    my $app = shift;
-    my $file_path = shift;
-
-    my ($file_extension) = $file_path =~ m/\.([^.]+)$/;
-
-    return 'application/octet-stream' unless defined($file_extension);
-    return 'text/html' if $file_extension eq 'html';
-    return 'text/css' if $file_extension eq 'css';
-    return 'text/javascript' if $file_extension eq 'js';
-    return 'application/xml' if $file_extension eq 'xml';
+    $self->{mt} = shift if @_;
+    $self->{mt};
 }
 
-sub _script_name {
-    my $app = shift;
+sub config {
+    my $self = shift;
 
-    my $script_name;
-    my $position_of_question = index($app->_relative_uri, '?');
-    unless ($position_of_question == -1) {
-        $script_name = substr($app->_relative_uri, 0, $position_of_question);
-    } else {
-        $script_name = $app->_relative_uri;
-    }
-
-    unless (length($app->path_info)) {
-        return $script_name;
-    }
-
-    {
-        require MT::Util;
-
-        my $position_of_pathinfo = index($script_name, MT::Util::encode_url($app->path_info));;
-        unless ($position_of_pathinfo == -1) {
-            return substr($script_name, 0, $position_of_pathinfo);
-        }
-
-        $script_name;
-    }
-}
-
-sub _relative_uri {
-    my $app = shift;
-
-    if (exists($ENV{REQUEST_URI})) {
-        my $request_uri = $ENV{REQUEST_URI};
-        $request_uri =~ s!//!/!g;
-        return $request_uri;
-    }
-
-    my $script_name = $ENV{MOD_PERL} ? $app->{apache}->uri : $ENV{SCRIPT_NAME};
-    $script_name =~ s!//!/!g;
-
-    my $query_string = $app->query_string;
-    if (length($query_string)) {
-        $query_string = "?$query_string";
-    }
-
-    my $path_info = $app->path_info;
-    if (length($path_info)) {
-        require MT::Util;
-
-        $path_info = MT::Util::encode_url($path_info);
-    }
-
-    "$script_name$path_info$query_string";
-}
-
-sub _fileinfo {
-    require MT::FileInfo;
-    require ITEMAN::DynamicPublishing::Cache;
-
-    my $app = shift;
-    my $script_name = shift;
-
-    my $cache = ITEMAN::DynamicPublishing::Cache->new();
-    $cache->cache({
-        'cache_id' => $cache->cache_id('fileinfo', $script_name, $app->blog->id),
-        'object_loader' => sub {
-            require MT;
-
-            my @fileinfos = MT->model('fileinfo')->search(
-                { url => $script_name,
-                  blog_id => $app->blog->id },
-                { limit => 1 }
-                );
-
-            unless (@fileinfos) {
-                return undef;
-            }
-
-            $fileinfos[0];
-        }
-                 });
-}
-
-sub _blog {
-    require MT::Blog;
-    require ITEMAN::DynamicPublishing::Cache;
-
-    my $app = shift;
-    my $blog_id = shift;
-
-    my $cache = ITEMAN::DynamicPublishing::Cache->new();
-    $cache->cache({
-        'cache_id' => $cache->cache_id('blog', $blog_id),
-        'object_loader' => sub {
-            require MT;
-            MT->model('blog')->lookup($blog_id);
-        }
-                 });
-}
-
-sub _entry {
-    require MT::Entry;
-    require MT::Page;
-    require ITEMAN::DynamicPublishing::Cache;
-
-    my $app = shift;
-    my $entry_id = shift;
-
-    my $cache = ITEMAN::DynamicPublishing::Cache->new();
-    $cache->cache({
-        'cache_id' => $cache->cache_id('entry', $entry_id),
-        'object_loader' => sub {
-            require MT;
-            MT->model('entry')->lookup($entry_id);
-        }
-                 });
-}
-
-sub _template {
-    require MT::Template;
-    require ITEMAN::DynamicPublishing::Cache;
-
-    my $app = shift;
-    my $template_id = shift;
-
-    my $cache = ITEMAN::DynamicPublishing::Cache->new();
-    $cache->cache({
-        'cache_id' => $cache->cache_id('template', $template_id),
-        'object_loader' => sub {
-            require MT;
-            MT->model('template')->lookup($template_id);
-        }
-                 });
-}
-
-sub _blog_not_modified {
-    require HTTP::Date;
-    require MT::Util;
-
-    my $app = shift;
-
-    exists($ENV{HTTP_IF_MODIFIED_SINCE})
-        and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= MT::Util::ts2epoch($app->blog, $app->blog->children_modified_on)
-        and exists($ENV{HTTP_IF_NONE_MATCH});
-}
-
-sub _content_not_modified {
-    require HTTP::Date;
-
-    my $app = shift;
-    my $params = shift;
-
-    exists($ENV{HTTP_IF_MODIFIED_SINCE})
-        and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= HTTP::Date::str2time($params->{'Last-Modified'})
-        and exists($ENV{HTTP_IF_NONE_MATCH})
-        and $ENV{HTTP_IF_NONE_MATCH} eq $params->{'ETag'};
+    $self->{config} = shift if @_;
+    $self->{config};
 }
 
 sub _error_page {
-    require MT;
+    my $self = shift;
+    my $status_code = shift;
 
-    my $app = shift;
-    my $params = shift;
-
-    my $error_page = MT->component('itemandynamicpublishing')
-                       ->get_config_value('error_page_' . $params->{response_code});
+    my $error_page = $self->config->{ 'error_page_' . $status_code };
     if ($error_page =~ m!^https?://!) {
-        return $app->redirect($error_page);
+        $self->redirect($error_page);
+        return;
     }
 
-    $app->response_content_type('text/html');
-    $app->response_code($params->{response_code});
+    $self->respond({
+        'status_code' => $status_code,
+        'response_body' => $self->mt->build_template_in_mem({
+            'error_page' => $error_page,
+            'status_code' => $status_code,
+                                                            })
+                   });
+}
 
-    my $tmpl = MT->component('itemandynamicpublishing')->load_tmpl($error_page);
-    unless ($tmpl) {
-        return $app->errtrans($params->{fallback_message});
-    }
+sub _init_config {
+    require ITEMAN::DynamicPublishing::Cache;
 
-    $tmpl->param('idp_server_signature', $ENV{SERVER_SIGNATURE});
-    $tmpl->param('idp_server_admin', $ENV{SERVER_ADMIN});
-    $tmpl->param('idp_script_name', $app->_script_name());
+    my $self = shift;
 
-    $app->build_page_in_mem($tmpl);
+    my $cache = ITEMAN::DynamicPublishing::Cache->new;
+    $self->config(
+        $cache->load($cache->cache_id('ITEMAN::DynamicPublishing::Config'))
+        );
+}
+
+sub _init_mt {
+    require ITEMAN::DynamicPublishing::MT;
+
+    my $self = shift;
+
+    $self->mt(ITEMAN::DynamicPublishing::MT->new($self->config));
 }
 
 1;
