@@ -32,8 +32,8 @@ use Test::More tests => 5;
     my $config = ITEMAN::DynamicPublishing::Config->new;
 
     is(
-        Cwd::realpath($config->error_page_404),
-        Cwd::realpath(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '404.tmpl'))
+        Cwd::abs_path($config->error_page_404),
+        Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '404.tmpl'))
         );
 }
 
@@ -41,8 +41,8 @@ use Test::More tests => 5;
     my $config = ITEMAN::DynamicPublishing::Config->new;
 
     is(
-        Cwd::realpath($config->error_page_500),
-        Cwd::realpath(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '500.tmpl'))
+        Cwd::abs_path($config->error_page_500),
+        Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '500.tmpl'))
         );
 }
 
@@ -66,8 +66,8 @@ use Test::More tests => 5;
 
     is($config->error_page_404, '/foo.html');
     is(
-        Cwd::realpath(ITEMAN::DynamicPublishing::Config->default('error_page_404')),
-        Cwd::realpath(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '404.tmpl'))
+        Cwd::abs_path(ITEMAN::DynamicPublishing::Config->default('error_page_404')),
+        Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '404.tmpl'))
         );
 }
 
