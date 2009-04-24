@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use ITEMAN::DynamicPublishing::Config;
+use HTTP::Status;
 
 sub new {
     my $class = shift;
@@ -37,8 +38,6 @@ sub publish {
 }
 
 sub redirect {
-    require HTTP::Status;
-
     my $self = shift;
     my $uri = shift;
 
@@ -47,8 +46,6 @@ sub redirect {
 }
 
 sub respond {
-    require HTTP::Status;
-
     my $self = shift;
     my $params = shift;
 
