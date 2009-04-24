@@ -80,7 +80,7 @@ sub save_config {
 
     my $cache = ITEMAN::DynamicPublishing::Cache->new;
     $cache->save({
-        cache_id => $cache->cache_id(ref($config)),
+        cache_id => $cache->cache_id('ITEMAN::DynamicPublishing::Config'),
         data => $config,
                  });
 }
