@@ -33,7 +33,7 @@ sub config {
 }
 
 sub mt {
-    use MT;
+    eval 'use MT';
 
     my $self = shift;
 
