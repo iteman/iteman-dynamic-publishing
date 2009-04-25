@@ -20,122 +20,73 @@ package ITEMAN::DynamicPublishing::Cache;
 use strict;
 use warnings;
 
+use ITEMAN::DynamicPublishing::Config;
+use Storable qw(lock_retrieve lock_store);
+use Digest::MD5 qw(md5_hex);
+
 sub new {
     my $class = shift;
     bless {}, $class;
 }
 
 sub cache {
-    require MT::FileMgr;
-    require ITEMAN::DynamicPublishing::Config;
-    require MT::Serialize;
-
     my $self = shift;
     my $params = shift;
 
-    my $fmgr = MT::FileMgr->new('Local');
+    my $object = $self->load($params->{cache_id});
+    return $object if $object;
 
-    unless ($fmgr->exists(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY)) {
-        $fmgr->mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
-        my $object = $params->{object_loader}->();
-        return $self->save({
-            cache_id => $params->{cache_id},
-            data => $object,
-                           });
-    }
-
-    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . $params->{cache_id};
-
-    unless ($fmgr->exists($cache_file)) {
-        my $object = $params->{object_loader}->();
-        return $self->save({
-            cache_id => $params->{cache_id},
-            data => $object,
-                           });
-    }
-
-    ${ MT::Serialize->new('Storable')->unserialize($fmgr->get_data($cache_file)) };
-}
-
-sub cache_id {
-    require MT::Util;
-
-    my $self = shift;
-    my @sources = @_;
-
-    return MT::Util::perl_sha1_digest_hex(join('', @_));
+    my $object = $params->{object_loader}->();
+    return $self->save({
+        cache_id => $params->{cache_id},
+        data => $object,
+                       });
 }
 
 sub clear {
-    require ITEMAN::DynamicPublishing::Config;
     require IO::Dir;
-    require MT::FileMgr;
     require File::Spec;
 
     my $self = shift;
 
-    unless (-d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY) {
-        return;
-    }
+    return unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
     my $d = IO::Dir->new(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
-    unless ($d) {
-        return;
-    }
+    return unless $d;
 
-    my $fmgr = MT::FileMgr->new('Local');
     while (defined($_ = $d->read)) {
         next if $_ eq '.' || $_ eq '..';
         next if /^\./;
         my $cache_file = File::Spec->catfile(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, $_);
         next unless -f $cache_file;
-        $fmgr->delete($cache_file);
+        unlink $cache_file;
     }
 
     undef $d;
 }
 
 sub save {
-    require MT::FileMgr;
-    require ITEMAN::DynamicPublishing::Config;
-    require MT::Serialize;
+    require File::Path;
 
     my $self = shift;
     my $params = shift;
 
-    my $fmgr = MT::FileMgr->new('Local');
-
-    unless ($fmgr->exists(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY)) {
-        $fmgr->mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
+    unless (-d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY) {
+        File::path::mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
     }
 
-    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . $params->{cache_id};
-    $fmgr->put_data(
-        MT::Serialize->new('Storable')->serialize(\$params->{data}),
-        $cache_file
-        );
-
-    1;
+    lock_store \$params->{data}, (ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($params->{cache_id}));
 }
 
 sub load {
-    require MT::FileMgr;
-    require ITEMAN::DynamicPublishing::Config;
-    require MT::Serialize;
-
     my $self = shift;
     my $cache_id = shift;
 
-    my $fmgr = MT::FileMgr->new('Local');
+    return undef unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
-    return undef unless $fmgr->exists(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
-
-    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . $cache_id;
-    return undef unless $fmgr->exists($cache_file);
-    my $data = $fmgr->get_data($cache_file);
-    return undef unless $data;
-
-    ${ MT::Serialize->new('Storable')->unserialize($data) };
+    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
+    return undef unless -r $cache_file;
+    ${ lock_retrieve $cache_file };
 }
 
 1;
