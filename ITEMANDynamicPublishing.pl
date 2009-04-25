@@ -88,10 +88,9 @@ sub save_config {
     $config->directory_index($args->{directory_index});
     $config->error_page_404($args->{error_page_404});
     $config->error_page_500($args->{error_page_500});
-
     my $cache = ITEMAN::DynamicPublishing::Cache->new;
     $cache->save({
-        cache_id => $cache->cache_id('ITEMAN::DynamicPublishing::Config'),
+        cache_id => 'ITEMAN::DynamicPublishing::Config',
         data => $config,
                  });
 }
