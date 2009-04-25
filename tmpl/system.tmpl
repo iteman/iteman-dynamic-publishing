@@ -5,7 +5,7 @@
     </div>
     <div class="field-content">
       <div class="textarea-wrapper">
-        <input type="text" size="40" id="idp_directory_index" name="directory_index" value="<TMPL_VAR NAME=DIRECTORY_INDEX ESCAPE=HTML>" />
+        <input type="text" size="50" id="idp_directory_index" name="directory_index" value="<mt:var name="directory_index" escape="HTML">" />
       </div>
       <p class="hint">
         <MT_TRANS phrase="Directory Index represents the file name which is used if a file name does not included in the requested URI. The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.">
@@ -20,9 +20,9 @@
       <label for="idp_cache_directory"><MT_TRANS phrase="Cache Directory"></label>
     </div>
     <div class="field-content">
-      <div class="textarea-wrapper">
-        <input type="text" size="40" id="idp_cache_directory" name="cache_directory" value="<TMPL_VAR NAME=CACHE_DIRECTORY ESCAPE=HTML>" disabled="disabled" />
-      </div>
+      <p>
+        <mt:var name="cache_directory" escape="HTML">
+      </p>
       <p class="hint">
         <MT_TRANS phrase="ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. Cache Directory is tmp under the directory where this plug-in has been deployed. Cache Directory should be readable/writable by the web server.">
       </p>
@@ -47,7 +47,7 @@
       </div>
       <div class="field-content">
         <div class="textarea-wrapper">
-          <input type="text" size="40" id="idp_error_page_404" name="error_page_404" value="<TMPL_VAR NAME=ERROR_PAGE_404 ESCAPE=HTML>" />
+          <input type="text" size="50" id="idp_error_page_404" name="error_page_404" value="<mt:var name="error_page_404" escape="HTML">" />
         </div>
       </div>
     </div>
@@ -60,7 +60,7 @@
       </div>
       <div class="field-content">
         <div class="textarea-wrapper">
-          <input type="text" size="40" id="idp_error_page_500" name="error_page_500" value="<TMPL_VAR NAME=ERROR_PAGE_500 ESCAPE=HTML>" />
+          <input type="text" size="50" id="idp_error_page_500" name="error_page_500" value="<mt:var name="error_page_500" escape="HTML">" />
         </div>
       </div>
     </div>
