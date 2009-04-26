@@ -36,7 +36,7 @@ sub cache {
     my $object = $self->load($params->{cache_id});
     return $object if $object;
 
-    my $object = $params->{object_loader}->();
+    $object = $params->{object_loader}->();
     return $self->save({
         cache_id => $params->{cache_id},
         data => $object,
