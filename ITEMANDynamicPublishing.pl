@@ -88,6 +88,9 @@ sub save_config {
     $config->directory_index($args->{directory_index});
     $config->error_page_404($args->{error_page_404});
     $config->error_page_500($args->{error_page_500});
+    $config->db_dsn($MT::Object::DRIVER->fallback->dsn);
+    $config->db_user($MT::Object::DRIVER->fallback->username);
+    $config->db_password($MT::Object::DRIVER->fallback->password);
     my $cache = ITEMAN::DynamicPublishing::Cache->new;
     $cache->save({
         cache_id => 'ITEMAN::DynamicPublishing::Config',
