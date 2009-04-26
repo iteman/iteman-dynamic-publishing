@@ -20,6 +20,8 @@ package ITEMAN::DynamicPublishing::MT;
 use strict;
 use warnings;
 
+use ITEMAN::DynamicPublishing::ServerEnv;
+
 sub new {
     my $class = shift;
     bless {}, $class;
@@ -50,11 +52,11 @@ sub build_template_in_mem {
         return $self->mt->load_tmpl($self->config->default('error_page_500')) if $params->{status_code} == 500;
         return;
     }
- 
+
     $tmpl->param('idp_server_signature', $ENV{SERVER_SIGNATURE});
     $tmpl->param('idp_server_admin', $ENV{SERVER_ADMIN});
-    $tmpl->param('idp_script_name', $self->_script_name());
- 
+    $tmpl->param('idp_script_name', ITEMAN::DynamicPublishing::ServerEnv->script_name);
+
     my $output = $self->mt->build_page_in_mem($tmpl);
     unless ($output) {
         return $self->mt->load_tmpl($self->config->default('error_page_500')) if $params->{status_code} == 500;
@@ -62,60 +64,6 @@ sub build_template_in_mem {
     }
 
     $output;
-}
-
-sub _script_name {
-    my $self = shift;
- 
-    my $script_name;
-    my $position_of_question = index($self->_relative_uri, '?');
-    unless ($position_of_question == -1) {
-        $script_name = substr($self->_relative_uri, 0, $position_of_question);
-    } else {
-        $script_name = $self->_relative_uri;
-    }
- 
-    unless (exists $ENV{PATH_INFO} and length($ENV{PATH_INFO})) {
-        return $script_name;
-    }
- 
-    {
-        require MT::Util;
- 
-        my $position_of_pathinfo = index($script_name, MT::Util::encode_url($ENV{PATH_INFO}));;
-        unless ($position_of_pathinfo == -1) {
-            return substr($script_name, 0, $position_of_pathinfo);
-        }
- 
-        $script_name;
-    }
-}
- 
-sub _relative_uri {
-    my $self = shift;
- 
-    if (exists($ENV{REQUEST_URI})) {
-        my $request_uri = $ENV{REQUEST_URI};
-        $request_uri =~ s!//!/!g;
-        return $request_uri;
-    }
- 
-    my $script_name = $ENV{SCRIPT_NAME};
-    $script_name =~ s!//!/!g;
- 
-    my $query_string = $ENV{QUERY_STRING};
-    if (length($query_string)) {
-        $query_string = "?$query_string";
-    }
- 
-    my $path_info = exists $ENV{PATH_INFO} ? $ENV{PATH_INFO} : '';
-    if (length($path_info)) {
-        require MT::Util;
- 
-        $path_info = MT::Util::encode_url($path_info);
-    }
- 
-    "$script_name$path_info$query_string";
 }
 
 1;
