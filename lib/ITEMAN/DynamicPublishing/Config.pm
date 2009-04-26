@@ -32,6 +32,9 @@ my %features_decl = (
     'directory_index' => 'index.html',
     'error_page_404' => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl')),
     'error_page_500' => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '500.tmpl')),
+    'db_dsn' => undef,
+    'db_user' => undef,
+    'db_password' => undef,
     );
 
 sub new {
