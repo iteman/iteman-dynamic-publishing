@@ -46,11 +46,19 @@ our $VERSION = '0.1.0';
 
     my $settings = [
         [ 'directory_index', { Default => ITEMAN::DynamicPublishing::Config->default('directory_index'), Scope => 'system'} ],
-        [ 'cache_directory', { Default => ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, Scope => 'system'} ],
         [ 'error_page_404', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_404'), Scope => 'system'} ],
         [ 'error_page_500', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_500'), Scope => 'system'} ],
         ];
     $plugin->settings(MT::PluginSettings->new($settings));
+}
+
+sub load_config {
+    my $plugin = shift;
+    my ($args, $scope) = @_;
+
+    $plugin->SUPER::load_config(@_);
+
+    $args->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 }
 
 sub save_config {
@@ -78,9 +86,6 @@ sub save_config {
     if ($args->{error_page_500} eq '') {
         return $plugin->error($plugin->translate('The error page for the status code 500 is required'));
     }
-
-    # cache_directory must be the default value
-    $args->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
     $plugin->SUPER::save_config(@_);
 
