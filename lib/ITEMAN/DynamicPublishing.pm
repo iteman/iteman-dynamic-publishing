@@ -86,14 +86,13 @@ sub mt {
 }
 
 sub _respond_for_success {
-    require File::stat;
     require HTTP::Date;
     require Digest::MD5;
 
     my $self = shift;
     my $params = shift;
-    
-    my $last_modified = HTTP::Date::time2str(File::stat::stat($params->{file_path})->mtime);
+
+    my $last_modified = HTTP::Date::time2str($self->_mtime($params->{file_path}));
     my $etag = Digest::MD5::md5_hex($params->{content});
 
     unless ($self->_is_modified({
@@ -282,16 +281,12 @@ WHERE
 }
 
 sub _render_as_string {
-    require IO::File;
- 
     my $self = shift;
     my $file_path = shift;
- 
-    my $fh = IO::File->new($file_path, 'r');
-    return unless defined $fh;
 
-    my @contents = <$fh>;
-    undef($fh);
+    open CONTENT, "< $file_path" or return;
+    my @contents = <CONTENT>;
+    close CONTENT;
  
     join('', @contents);
 }
@@ -316,15 +311,13 @@ sub _rebuild_if_required {
     while (!$self->_lock_for_rebuild) {}
 
     eval {
-        require File::stat;
-        
-        my $st = File::stat::stat($file_path);
-        unless ($st) {
+        my $mtime = $self->_mtime($file_path);
+        unless ($mtime) {
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
 
-        unless ($self->_is_up_to_date($st->mtime)) {
+        unless ($self->_is_up_to_date($mtime)) {
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     }; if ($@) {
@@ -352,23 +345,22 @@ sub _lock_for_rebuild {
 
 sub _unlock_for_rebuild {
     flock REBUILD_TOUCH_FILE, LOCK_UN;
+    close REBUILD_TOUCH_FILE;
 }
 
 sub _is_up_to_date {
-    require File::stat;
- 
     my $self = shift;
-    my $mtime = shift;
+    my $target_file_mtime = shift;
 
-    my $st = File::stat::stat(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
-        or die"Can't open " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
-    return $mtime >= $st->mtime;
+    my $rebuild_touch_file_mtime = $self->_mtime(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+        or die 'The file [ ' . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE . ' ] does not found';
+    return $target_file_mtime >= $rebuild_touch_file_mtime;
 }
 
 sub _is_modified {
     require HTTP::Date;
  
-    my $app = shift;
+    my $self = shift;
     my $params = shift;
  
     !(exists $ENV{HTTP_IF_MODIFIED_SINCE}
@@ -376,6 +368,16 @@ sub _is_modified {
       and exists $ENV{HTTP_IF_NONE_MATCH}
       and $ENV{HTTP_IF_NONE_MATCH} eq $params->{'ETag'}
         );
+}
+
+sub _mtime {
+    my $self = shift;
+    my $file = shift;
+
+    my @status_info = stat $file;
+    return unless @status_info;
+
+    $status_info[9];
 }
 
 1;
