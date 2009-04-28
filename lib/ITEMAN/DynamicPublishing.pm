@@ -21,7 +21,10 @@ use strict;
 use warnings;
 
 use ITEMAN::DynamicPublishing::Config;
-use HTTP::Status;
+use ITEMAN::DynamicPublishing::Cache;
+use ITEMAN::DynamicPublishing::ServerEnv;
+use ITEMAN::DynamicPublishing::MT;
+use Fcntl qw(:flock);
 
 sub new {
     my $class = shift;
@@ -34,33 +37,38 @@ sub publish {
     $self->_init_config unless $self->config;
     $self->_init_mt unless $self->mt;
 
-    return $self->_error_page(500) unless exists $ENV{IDP_BLOG_ID};
-}
+    unless (exists $ENV{IDP_BLOG_ID}) {
+        $self->_error_page(500);
+        return;
+    }
 
-sub redirect {
-    my $self = shift;
-    my $uri = shift;
+    $self->_blog_id($ENV{IDP_BLOG_ID});
+    $self->_init_script_name;
 
-    print 'Status: ', 302, ' ', status_message(302), "\n";
-    print 'Location: ', $uri, "\n";
-}
+    $self->_fileinfo($self->_load_fileinfo);
 
-sub respond {
-    my $self = shift;
-    my $params = shift;
+    unless ($self->_fileinfo) {
+        my $file_path = $ENV{DOCUMENT_ROOT} . $self->_script_name;
+        my $content = $self->_render_as_string($file_path);
+        unless (defined $content) {
+            $self->_error_page(404);
+            return;
+        }
 
-    print 'Status: ', $params->{status_code}, ' ', status_message($params->{status_code}), "\n";
-    print 'Content-Length: ', length($params->{response_body}), "\n";
-    print 'Content-Type: ', 'text/html', "\n";
-    print "\n";
-    print $params->{response_body};
-}
+        $self->_respond_for_success({ file_path => $file_path, content => $content });
+        return;
+    }
 
-sub mt {
-    my $self = shift;
+    my $file_path = -f $self->_fileinfo->{fileinfo_file_path} ? $self->_fileinfo->{fileinfo_file_path}
+                                                              : $ENV{DOCUMENT_ROOT} . $self->_script_name;
+    $self->_rebuild_if_required($file_path);
+    my $content = $self->_render_as_string($file_path);
+    unless (defined $content) {
+        $self->_error_page(404);
+        return;
+    }
 
-    $self->{mt} = shift if @_;
-    $self->{mt};
+    $self->_respond_for_success({ file_path => $file_path, content => $content });
 }
 
 sub config {
@@ -70,42 +78,304 @@ sub config {
     $self->{config};
 }
 
+sub mt {
+    my $self = shift;
+
+    $self->{mt} = shift if @_;
+    $self->{mt};
+}
+
+sub _respond_for_success {
+    require File::stat;
+    require HTTP::Date;
+    require Digest::MD5;
+
+    my $self = shift;
+    my $params = shift;
+    
+    my $last_modified = HTTP::Date::time2str(File::stat::stat($params->{file_path})->mtime);
+    my $etag = Digest::MD5::md5_hex($params->{content});
+
+    unless ($self->_is_modified({
+        'Last-Modified' => $last_modified,
+        'ETag' => $etag,
+                                     })
+        ) {
+        $self->_respond({
+            status_code => 304,
+            headers => {
+                'Last-Modified' => $last_modified,
+                'ETag' => $etag,
+            },
+                        });
+        return;
+    }
+
+    $self->_respond({
+        status_code => 200,
+        content_type => $self->_content_type_by_extension($params->{file_path}),
+        response_body => $params->{content},
+        headers => {
+            'Last-Modified' => $last_modified,
+            'ETag' => $etag,
+        },
+                    });
+}
+
 sub _error_page {
     my $self = shift;
     my $status_code = shift;
 
     my $error_page = $self->config->{ 'error_page_' . $status_code };
     if ($error_page =~ m!^https?://!) {
-        $self->redirect($error_page);
+        $self->_redirect($error_page);
         return;
     }
 
-    $self->respond({
-        'status_code' => $status_code,
-        'response_body' => $self->mt->build_template_in_mem({
-            'error_page' => $error_page,
-            'status_code' => $status_code,
-                                                            })
-                   });
+    $self->_respond({
+        status_code => $status_code,
+        content_type => 'text/html',
+        response_body => $self->mt->build_template_in_mem({
+            error_page => $error_page,
+            status_code => $status_code,
+                                                          }),
+                    });
 }
 
 sub _init_config {
-    require ITEMAN::DynamicPublishing::Cache;
-
     my $self = shift;
 
-    my $cache = ITEMAN::DynamicPublishing::Cache->new;
-    $self->config(
-        $cache->load($cache->cache_id('ITEMAN::DynamicPublishing::Config'))
-        );
+    $self->config(ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') or ITEMAN::DynamicPublishing::Config->new);
 }
 
 sub _init_mt {
-    require ITEMAN::DynamicPublishing::MT;
-
     my $self = shift;
 
     $self->mt(ITEMAN::DynamicPublishing::MT->new($self->config));
+}
+
+sub _init_script_name {
+    my $self = shift;
+
+    my $script_name = ITEMAN::DynamicPublishing::ServerEnv->script_name;
+    $script_name .= $self->config->directory_index if $script_name =~ m!/$!;
+
+    $self->_script_name($script_name);
+}
+
+sub _script_name {
+    my $self = shift;
+
+    $self->{script_name} = shift if @_;
+    $self->{script_name};
+}
+
+sub _blog_id {
+    my $self = shift;
+
+    $self->{blog_id} = shift if @_;
+    $self->{blog_id};
+}
+
+sub _fileinfo {
+    my $self = shift;
+
+    $self->{fileinfo} = shift if @_;
+    $self->{fileinfo};
+}
+
+sub _redirect {
+    require HTTP::Status;
+
+    my $self = shift;
+    my $uri = shift;
+
+    print 'Status: ', 302, ' ', HTTP::Status::status_message(302), "\n";
+    print 'Location: ', $uri, "\n";
+}
+
+sub _respond {
+    require HTTP::Status;
+
+    my $self = shift;
+    my $params = shift;
+
+    print 'Status: ', $params->{status_code}, ' ', HTTP::Status::status_message($params->{status_code}), "\n";
+    print 'Content-Length: ', length($params->{response_body}), "\n" if exists $params->{response_body};
+    print 'Content-Type: ', $params->{content_type}, "\n" if exists $params->{content_type};
+
+    foreach (keys %{$params->{headers}}) {
+        print $_, ': ', $params->{headers}->{$_}, "\n";
+    }
+
+    print "\n";
+    print $params->{response_body} if exists $params->{response_body};
+}
+
+sub _load_blog {
+    my $self = shift;
+    my $blog_id = shift;
+
+    my $cache = ITEMAN::DynamicPublishing::Cache->new;
+    $cache->cache({
+        cache_id => 'blog' . $blog_id,
+        object_loader => sub {
+            require DBI;
+
+            my $dbh = DBI->connect_cached(
+                $self->config->db_dsn,
+                $self->config->db_user,
+                $self->config->db_password,
+                { RaiseError => 1, PrintError => 0 }
+                );
+            $dbh->selectrow_hashref(
+                '
+SELECT
+  blog_id,
+  blog_children_modified_on,
+  blog_server_offset
+FROM
+  mt_blog
+WHERE
+  blog_id = ?
+',
+                {},
+                ($blog_id)
+                );
+        }
+                  });
+}
+
+sub _load_fileinfo {
+    my $self = shift;
+
+    my $cache = ITEMAN::DynamicPublishing::Cache->new;
+    $cache->cache({
+        cache_id => 'fileinfo' . $self->_script_name . $self->_blog_id,
+        object_loader => sub {
+            require DBI;
+
+            my $dbh = DBI->connect_cached(
+                $self->config->db_dsn,
+                $self->config->db_user,
+                $self->config->db_password,
+                { RaiseError => 1, PrintError => 0 }
+                );
+            $dbh->selectrow_hashref(
+                '
+SELECT
+  fileinfo_id,
+  fileinfo_entry_id,
+  fileinfo_template_id,
+  fileinfo_file_path
+FROM
+  mt_fileinfo
+WHERE
+  fileinfo_url = ?
+  AND fileinfo_blog_id = ?
+',
+                {},
+                ($self->_script_name, $self->_blog_id)
+                );
+        }
+                  });
+}
+
+sub _render_as_string {
+    require IO::File;
+ 
+    my $self = shift;
+    my $file_path = shift;
+ 
+    my $fh = IO::File->new($file_path, 'r');
+    return unless defined $fh;
+
+    my @contents = <$fh>;
+    undef($fh);
+ 
+    join('', @contents);
+}
+
+sub _content_type_by_extension {
+    my $self = shift;
+    my $file_path = shift;
+ 
+    my ($file_extension) = $file_path =~ m/\.([^.]+)$/;
+ 
+    return 'application/octet-stream' unless defined $file_extension;
+    return 'text/html' if $file_extension eq 'html';
+    return 'text/css' if $file_extension eq 'css';
+    return 'text/javascript' if $file_extension eq 'js';
+    return 'application/xml' if $file_extension eq 'xml';
+}
+
+sub _rebuild_if_required {
+    my $self = shift;
+    my $file_path = shift;
+
+    while (!$self->_lock_for_rebuild) {}
+
+    eval {
+        require File::stat;
+        
+        my $st = File::stat::stat($file_path);
+        unless ($st) {
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            return;
+        }
+
+        unless ($self->_is_up_to_date($st->mtime)) {
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+        }
+    }; if ($@) {
+        $self->_unlock_for_rebuild;
+        die $@;
+    }
+
+    $self->_unlock_for_rebuild;
+}
+
+sub _lock_for_rebuild {
+    require File::Spec;
+
+    my $self = shift;
+
+    my $touch_file = File::Spec->catfile(
+        ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY,
+        '.page-rebuild-' . $self->_fileinfo->{fileinfo_id}
+        );
+    open REBUILD_TOUCH_FILE, "> $touch_file"
+        or die "The lock for rebuilding a page failed: $!";
+
+    flock REBUILD_TOUCH_FILE, LOCK_EX;
+}
+
+sub _unlock_for_rebuild {
+    flock REBUILD_TOUCH_FILE, LOCK_UN;
+}
+
+sub _is_up_to_date {
+    require File::stat;
+ 
+    my $self = shift;
+    my $mtime = shift;
+
+    my $st = File::stat::stat(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+        or die"Can't open " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
+    return $mtime >= $st->mtime;
+}
+
+sub _is_modified {
+    require HTTP::Date;
+ 
+    my $app = shift;
+    my $params = shift;
+ 
+    !(exists $ENV{HTTP_IF_MODIFIED_SINCE}
+      and HTTP::Date::str2time($ENV{HTTP_IF_MODIFIED_SINCE}) >= HTTP::Date::str2time($params->{'Last-Modified'})
+      and exists $ENV{HTTP_IF_NONE_MATCH}
+      and $ENV{HTTP_IF_NONE_MATCH} eq $params->{'ETag'}
+        );
 }
 
 1;

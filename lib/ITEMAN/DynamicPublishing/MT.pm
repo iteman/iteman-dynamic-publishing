@@ -20,8 +20,6 @@ package ITEMAN::DynamicPublishing::MT;
 use strict;
 use warnings;
 
-use ITEMAN::DynamicPublishing::ServerEnv;
-
 sub new {
     my $class = shift;
     bless {}, $class;
@@ -53,6 +51,8 @@ sub build_template_in_mem {
         return;
     }
 
+    require ITEMAN::DynamicPublishing::ServerEnv;
+
     $tmpl->param('idp_server_signature', $ENV{SERVER_SIGNATURE});
     $tmpl->param('idp_server_admin', $ENV{SERVER_ADMIN});
     $tmpl->param('idp_script_name', ITEMAN::DynamicPublishing::ServerEnv->script_name);
@@ -64,6 +64,16 @@ sub build_template_in_mem {
     }
 
     $output;
+}
+
+sub rebuild_from_fileinfo {
+    my $self = shift;
+    my $fileinfo_id = shift;
+
+    my $fileinfo = $self->mt->model('fileinfo')->lookup($fileinfo_id);
+    die "The fileinfo object for the id [ $fileinfo_id ] does not found" unless $fileinfo;
+
+    $self->mt->publisher->rebuild_from_fileinfo($fileinfo)
 }
 
 1;
