@@ -211,40 +211,6 @@ sub _respond {
     print $params->{response_body} if exists $params->{response_body};
 }
 
-sub _load_blog {
-    my $self = shift;
-    my $blog_id = shift;
-
-    my $cache = ITEMAN::DynamicPublishing::Cache->new;
-    $cache->cache({
-        cache_id => 'blog' . $blog_id,
-        object_loader => sub {
-            require DBI;
-
-            my $dbh = DBI->connect_cached(
-                $self->config->db_dsn,
-                $self->config->db_user,
-                $self->config->db_password,
-                { RaiseError => 1, PrintError => 0 }
-                );
-            $dbh->selectrow_hashref(
-                '
-SELECT
-  blog_id,
-  blog_children_modified_on,
-  blog_server_offset
-FROM
-  mt_blog
-WHERE
-  blog_id = ?
-',
-                {},
-                ($blog_id)
-                );
-        }
-                  });
-}
-
 sub _load_fileinfo {
     my $self = shift;
 
