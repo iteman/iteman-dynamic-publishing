@@ -1,11 +1,11 @@
 <div class="field field-left-label pkg">
   <div class="field-inner">
-    <div class="field-header">
+    <div class="field-header" style="text-align: left; width: 180px;">
       <label for="idp_directory_index"><MT_TRANS phrase="Directory Index"></label>
     </div>
-    <div class="field-content">
+    <div class="field-content" style="margin: 0 10px 0 190px">
       <div class="textarea-wrapper">
-        <input type="text" size="50" id="idp_directory_index" name="directory_index" value="<mt:var name="directory_index" escape="HTML">" />
+        <input type="text" size="50" id="idp_directory_index" name="directory_index" value="<mt:var name="directory_index" escape="HTML">" style="width: 100%" />
       </div>
       <p class="hint">
         <MT_TRANS phrase="Directory Index represents the file name which is used if a file name does not included in the requested URI. The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.">
@@ -16,10 +16,10 @@
 
 <div class="field field-left-label pkg">
   <div class="field-inner">
-    <div class="field-header">
+    <div class="field-header" style="text-align: left; width: 180px;">
       <label for="idp_cache_directory"><MT_TRANS phrase="Cache Directory"></label>
     </div>
-    <div class="field-content">
+    <div class="field-content" style="margin: 0 10px 0 190px">
       <p>
         <mt:var name="cache_directory" escape="HTML">
       </p>
@@ -27,27 +27,27 @@
         <MT_TRANS phrase="ITEMAN Dynamic Publishing caches of the result of a query to the database for performance. A cache file will be written to the directory specified by Cache Directory. Cache Directory is tmp under the directory where this plug-in has been deployed. Cache Directory should be readable/writable by the web server.">
       </p>
     </div>
-    <div class="field-content">
+    <div class="field-content" style="margin: 0 10px 0 190px">
       <input type="hidden" name="clear_caches" value="false" />
       <button onclick="this.form.clear_caches.value = 'true'; this.form.submit(); return false;" type="submit" mt:mode="save_plugin_config"><MT_TRANS phrase="Clear Caches"></button>
     </div>
   </div>
 </div>
 
-<fieldset>
-  <legend><MT_TRANS phrase="Error Pages"></legend>
-  <p class="hint">
+<fieldset style="border: 1px solid #AAAAAA;">
+  <legend style="padding: 0 5px 0; margin: 0 5px 5px"><MT_TRANS phrase="Error Pages"></legend>
+  <p class="hint" style="margin:0 10px 10px;">
     <MT_TRANS phrase="Any error page can be specified for 404 and 505 errors. The value should be one of the absolute path of a HTML file, the absolute path of a MT template file, or a URI for redirection.">
   </p>
 
   <div class="field field-left-label pkg">
     <div class="field-inner">
-      <div class="field-header">
+      <div class="field-header" style="text-align: left; margin-left: 10px; width: 170px;">
         <label for="idp_error_page_404"><MT_TRANS phrase="404 (Not Found)"></label>
       </div>
-      <div class="field-content">
+      <div class="field-content" style="margin: 0 10px 0 190px">
         <div class="textarea-wrapper">
-          <input type="text" size="50" id="idp_error_page_404" name="error_page_404" value="<mt:var name="error_page_404" escape="HTML">" />
+          <input type="text" size="50" id="idp_error_page_404" name="error_page_404" value="<mt:var name="error_page_404" escape="HTML">" style="width: 100%" />
         </div>
       </div>
     </div>
@@ -55,12 +55,12 @@
 
   <div class="field field-left-label pkg">
     <div class="field-inner">
-      <div class="field-header">
+      <div class="field-header" style="text-align: left; margin-left: 10px; width: 170px;">
         <label for="idp_error_page_500"><MT_TRANS phrase="500 (Internal Server Error)"></label>
       </div>
-      <div class="field-content">
+      <div class="field-content" style="margin: 0 10px 0 190px">
         <div class="textarea-wrapper">
-          <input type="text" size="50" id="idp_error_page_500" name="error_page_500" value="<mt:var name="error_page_500" escape="HTML">" />
+          <input type="text" size="50" id="idp_error_page_500" name="error_page_500" value="<mt:var name="error_page_500" escape="HTML">" style="width: 100%" />
         </div>
       </div>
     </div>
