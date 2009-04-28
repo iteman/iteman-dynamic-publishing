@@ -47,18 +47,28 @@ sub clear {
     require File::Spec;
 
     my $self = shift;
+    my $params = shift;
 
     return unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
     my $d = IO::Dir->new(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
     return unless $d;
 
-    while (defined($_ = $d->read)) {
-        next if $_ eq '.' || $_ eq '..';
-        next if /^\./;
-        my $cache_file = File::Spec->catfile(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, $_);
-        next unless -f $cache_file;
-        unlink $cache_file;
+  REMOVAL_LOOP: {
+      while (defined($_ = $d->read)) {
+          next if $_ eq '.' || $_ eq '..';
+          next if /^\./;
+
+          if (exists $params->{excludes}) {
+              foreach my $exclude (@{$params->{excludes}}) {
+                  next REMOVAL_LOOP if md5_hex($exclude) eq $_;
+              }
+          }
+
+          my $cache_file = File::Spec->catfile(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, $_);
+          next unless -f $cache_file;
+          unlink $cache_file;
+      }
     }
 
     undef $d;
@@ -86,6 +96,18 @@ sub load {
     my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
     return undef unless -r $cache_file;
     ${ lock_retrieve $cache_file };
+}
+
+sub remove {
+    require File::Spec;
+
+    my $self = shift;
+    my $cache_id = shift;
+
+    return unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
+
+    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
+    unlink $cache_file;
 }
 
 1;
