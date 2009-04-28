@@ -37,10 +37,9 @@ sub cache {
     return $object if $object;
 
     $object = $params->{object_loader}->();
-    return $self->save({
-        cache_id => $params->{cache_id},
-        data => $object,
-                       });
+    $self->save({ cache_id => $params->{cache_id}, data => $object });
+
+    $object;
 }
 
 sub clear {
