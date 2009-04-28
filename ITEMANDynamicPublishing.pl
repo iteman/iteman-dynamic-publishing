@@ -21,6 +21,7 @@ use strict;
 
 use base qw( MT::Plugin );
 use ITEMAN::DynamicPublishing::Config;
+use ITEMAN::DynamicPublishing::Cache;
 
 our $VERSION = '0.1.0';
 
@@ -54,53 +55,73 @@ our $VERSION = '0.1.0';
 
 sub load_config {
     my $plugin = shift;
-    my ($args, $scope) = @_;
+    my ($param, $scope) = @_;
 
     $plugin->SUPER::load_config(@_);
 
-    $args->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
+    unless (ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config')) {
+        $plugin->_save_idp_config($param);
+    }
+
+    $param->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 }
 
 sub save_config {
-    require ITEMAN::DynamicPublishing::Cache;
-
     my $plugin = shift;
-    my ($args, $scope) = @_;
+    my ($param, $scope) = @_;
 
     unless ($scope eq 'system') {
         return;
     }
 
-    if ($args->{clear_caches} eq 'true') {
-        return ITEMAN::DynamicPublishing::Cache->new->clear;
+    if ($param->{clear_caches} eq 'true') {
+        ITEMAN::DynamicPublishing::Cache->new->clear({
+            excludes => [ 'ITEMAN::DynamicPublishing::Config' ]
+                                                     });
+        return;
     }
 
-    if ($args->{directory_index} eq '') {
+    if ($param->{directory_index} eq '') {
         return $plugin->error($plugin->translate('Directory Index is required'));
     }
 
-    if ($args->{error_page_404} eq '') {
+    if ($param->{error_page_404} eq '') {
         return $plugin->error($plugin->translate('The error page for the status code 404 is required'));
     }
 
-    if ($args->{error_page_500} eq '') {
+    if ($param->{error_page_500} eq '') {
         return $plugin->error($plugin->translate('The error page for the status code 500 is required'));
     }
 
     $plugin->SUPER::save_config(@_);
 
+    $plugin->_save_idp_config($param);
+}
+
+sub reset_config {
+    my $plugin = shift;
+
+    $plugin->SUPER::reset_config(@_);
+
+    ITEMAN::DynamicPublishing::Cache->new->remove('ITEMAN::DynamicPublishing::Config');
+}
+
+sub _save_idp_config {
+    my $plugin = shift;
+    my $param = shift;
+
     my $config = ITEMAN::DynamicPublishing::Config->new;
-    $config->directory_index($args->{directory_index});
-    $config->error_page_404($args->{error_page_404});
-    $config->error_page_500($args->{error_page_500});
+    $config->directory_index($param->{directory_index});
+    $config->error_page_404($param->{error_page_404});
+    $config->error_page_500($param->{error_page_500});
     $config->db_dsn($MT::Object::DRIVER->fallback->dsn);
     $config->db_user($MT::Object::DRIVER->fallback->username);
     $config->db_password($MT::Object::DRIVER->fallback->password);
-    my $cache = ITEMAN::DynamicPublishing::Cache->new;
-    $cache->save({
+
+    ITEMAN::DynamicPublishing::Cache->new->save({
         cache_id => 'ITEMAN::DynamicPublishing::Config',
         data => $config,
-                 });
+                                                });
 }
 
 1;
