@@ -27,6 +27,7 @@ use Cwd;
 use constant PLUGIN_NAME => 'ITEMAN Dynamic Publishing';
 use constant PLUGIN_ID => 'itemandynamicpublishing';
 use constant CACHE_DIRECTORY => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp'));
+use constant REBUILD_TOUCH_FILE => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp', '.objects-save'));
 
 my %features_decl = (
     'directory_index' => 'index.html',
