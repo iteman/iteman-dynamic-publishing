@@ -20,8 +20,6 @@ package ITEMAN::DynamicPublishing::ServerEnv;
 use strict;
 use warnings;
 
-use URI::Escape;
-
 sub script_name {
     my $class = shift;
  
@@ -31,6 +29,8 @@ sub script_name {
                                                : substr $class->relative_uri, 0, $position_of_question;
  
     return $script_name unless exists $ENV{PATH_INFO} and length $ENV{PATH_INFO};
+
+    require URI::Escape;
  
     my $position_of_pathinfo = index($script_name, URI::Escape::uri_escape($ENV{PATH_INFO}));
     return substr $script_name, 0, $position_of_pathinfo unless $position_of_pathinfo == -1;
@@ -52,6 +52,8 @@ sub relative_uri {
  
     my $query_string = $ENV{QUERY_STRING};
     $query_string = "?$query_string" if length $query_string;
+
+    require URI::Escape;
  
     my $path_info = exists $ENV{PATH_INFO} ? $ENV{PATH_INFO} : '';
     $path_info = URI::Escape::uri_escape $path_info if length $path_info;
