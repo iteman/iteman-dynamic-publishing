@@ -42,6 +42,12 @@ our $VERSION = '0.1.0';
         version => $VERSION,
         system_config_template => 'system.tmpl',
         l10n_class => 'ITEMAN::DynamicPublishing::L10N',
+        callbacks => {
+            'cms_post_save' => sub {
+                utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+                    or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
+            },
+        },
                                   });
     MT->add_plugin($plugin);
 
