@@ -54,22 +54,20 @@ sub clear {
     my $d = IO::Dir->new(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
     return unless $d;
 
-  REMOVAL_LOOP: {
-      while (defined($_ = $d->read)) {
-          next if $_ eq '.' || $_ eq '..';
-          next if /^\./;
+  REMOVAL_LOOP: while (defined($_ = $d->read)) {
+      next if $_ eq '.' || $_ eq '..';
+      next if /^\./;
 
-          if (exists $params->{excludes}) {
-              foreach my $exclude (@{$params->{excludes}}) {
-                  next REMOVAL_LOOP if md5_hex($exclude) eq $_;
-              }
+      if (exists $params->{excludes}) {
+          foreach my $exclude (@{$params->{excludes}}) {
+              next REMOVAL_LOOP if md5_hex($exclude) eq $_;
           }
-
-          my $cache_file = File::Spec->catfile(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, $_);
-          next unless -f $cache_file;
-          unlink $cache_file;
       }
-    }
+
+      my $cache_file = File::Spec->catfile(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY, $_);
+      next unless -f $cache_file;
+      unlink $cache_file;
+  }
 
     undef $d;
 }
