@@ -26,6 +26,9 @@
         <p>
           <mt:var name="cache_directory" escape="HTML">
         </p>
+        <p>
+          <mt:unless name="cache_directory_error"><span class="icon-left icon-success">OK</span><mt:else><span class="icon-left icon-warning"><mt:var name="cache_directory_error_message"></span></mt:unless>
+        </p>
       </div>
     </div>
   </div>
