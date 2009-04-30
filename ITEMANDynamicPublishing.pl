@@ -66,9 +66,10 @@ sub load_config {
     $plugin->SUPER::load_config(@_);
 
     unless (ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config')) {
-        $plugin->_save_idp_config($param);
+        eval { $plugin->_save_idp_config($param) };
     }
 
+    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') ? 1 : 0;
     $param->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 }
 

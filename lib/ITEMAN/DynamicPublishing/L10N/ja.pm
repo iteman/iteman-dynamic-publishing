@@ -31,6 +31,8 @@ our %Lexicon = (
     'The error page for the status code 500 is required' => 'ステータスコード 500 のためのエラーページは必須です',
 
 # plugins/ITEMANDynamicPublishing/tmpl/system.tmpl
+    'Configuration Check' => '構成のチェック',
+    'Failed to read the configuration cache. See the following section for more details.' => '構成のキャッシュの読み込みに失敗しました。詳細は下記のセクションを参照してください。',
     'Cache' => 'キャッシュ',
     'Cache Directory' => 'キャッシュディレクトリ',
     'Clear Caches' => 'キャッシュのクリア',
