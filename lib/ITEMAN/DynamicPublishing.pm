@@ -284,6 +284,7 @@ sub _rebuild_if_required {
         }
 
         unless ($self->_is_up_to_date($mtime)) {
+            unlink $file_path or die "Failed to remove $file_path what will be rebuilt";
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     }; if ($@) {
