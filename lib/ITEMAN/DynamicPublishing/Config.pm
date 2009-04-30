@@ -22,17 +22,16 @@ use warnings;
 
 use File::Spec;
 use File::Basename;
-use Cwd;
 
 use constant PLUGIN_NAME => 'ITEMAN Dynamic Publishing';
 use constant PLUGIN_ID => 'itemandynamicpublishing';
-use constant CACHE_DIRECTORY => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp'));
-use constant REBUILD_TOUCH_FILE => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp', '.objects-save'));
+use constant CACHE_DIRECTORY => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp');
+use constant REBUILD_TOUCH_FILE => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp', '.objects-save');
 
 my %features_decl = (
     'directory_index' => 'index.html',
-    'error_page_404' => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl')),
-    'error_page_500' => Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '500.tmpl')),
+    'error_page_404' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl'),
+    'error_page_500' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '500.tmpl'),
     'db_dsn' => undef,
     'db_user' => undef,
     'db_password' => undef,
