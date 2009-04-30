@@ -79,7 +79,7 @@ sub save {
     my $params = shift;
 
     unless (-d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY) {
-        File::path::mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
+        File::Path::mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
     }
 
     lock_store \$params->{data}, (ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($params->{cache_id}));
