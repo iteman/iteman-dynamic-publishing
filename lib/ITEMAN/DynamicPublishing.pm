@@ -279,13 +279,16 @@ sub _rebuild_if_required {
     eval {
         my $mtime = $self->_mtime($file_path);
         unless ($mtime) {
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id})
+                or die "Failed to rebuild $file_path";
             return;
         }
 
         unless ($self->_is_up_to_date($mtime)) {
-            unlink $file_path or die "Failed to remove $file_path what will be rebuilt";
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            unlink $file_path
+                or die "Failed to remove $file_path what will be rebuilt";
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id})
+                or die "Failed to rebuild $file_path";
         }
     }; if ($@) {
         $self->_unlock_for_rebuild;
