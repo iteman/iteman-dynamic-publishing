@@ -70,43 +70,15 @@ sub load_config {
         eval { $plugin->_save_idp_config($param) };
     }
 
-    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') ? 1 : 0;
     $param->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
-  CACHE_DIRECTORY_CHECK: {
-      my $user_name = getpwuid $>;
-      $user_name = $> unless $user_name;
-      unless (-d $param->{cache_directory}) {
-          $param->{cache_directory_error} = 1;
-          $param->{cache_directory_error_message} =
-              $plugin->translate('The directory is not found or not readable for [_1]', $user_name);
-          last CACHE_DIRECTORY_CHECK;
-      }
-
-      unless (-x $param->{cache_directory}) {
-          $param->{cache_directory_error} = 1;
-          $param->{cache_directory_error_message} =
-            $plugin->translate('The directory is not readable for [_1]', $user_name);
-        last CACHE_DIRECTORY_CHECK;
-      }
-
-      unless (-w $param->{cache_directory}) {
-          $param->{cache_directory_error} = 1;
-          $param->{cache_directory_error_message} =
-              $plugin->translate('The directory is not writable for [_1]', $user_name);
-          last CACHE_DIRECTORY_CHECK;
-      }
-
-      my $cache_directory = Cwd::abs_path($param->{cache_directory});
-      unless ($cache_directory) {
-          $param->{cache_directory_error} = 1;
-          $param->{cache_directory_error_message} =
-              $plugin->translate('Failed to access the directory. Make sure the directory permission is right.');
-          last CACHE_DIRECTORY_CHECK;
-      }
-
-      $param->{cache_directory} = $cache_directory;
+    eval {
+        $param->{cache_directory} = $plugin->_check_cache_directory($param);
+    }; if ($@) {
+        $param->{cache_directory_error} = 1;
     }
+
+    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') && !$param->{cache_directory_error} ? 1 : 0;
 }
 
 sub save_config {
@@ -165,6 +137,36 @@ sub _save_idp_config {
         cache_id => 'ITEMAN::DynamicPublishing::Config',
         data => $config,
                                                 });
+}
+
+sub _check_cache_directory {
+    my $plugin = shift;
+    my $param = shift;
+
+    my $user_name = getpwuid $>;
+    $user_name = $> unless $user_name;
+    unless (-d $param->{cache_directory}) {
+        $param->{cache_directory_error_message} = $plugin->translate('The directory is not found or not readable for [_1]', $user_name);
+        die;
+    }
+
+    unless (-x $param->{cache_directory}) {
+        $param->{cache_directory_error_message} = $plugin->translate('The directory is not readable for [_1]', $user_name);
+        die;
+    }
+
+    unless (-w $param->{cache_directory}) {
+        $param->{cache_directory_error_message} = $plugin->translate('The directory is not writable for [_1]', $user_name);
+        die;
+    }
+
+    my $cache_directory = Cwd::abs_path($param->{cache_directory});
+    unless ($cache_directory) {
+        $param->{cache_directory_error_message} =$plugin->translate('Failed to access the directory. Make sure the directory permission is right.');
+        die;
+    }
+
+    return $cache_directory;
 }
 
 1;
