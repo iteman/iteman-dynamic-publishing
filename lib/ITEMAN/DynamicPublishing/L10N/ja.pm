@@ -32,7 +32,7 @@ our %Lexicon = (
 
 # plugins/ITEMANDynamicPublishing/tmpl/system.tmpl
     'Configuration Check' => '構成のチェック',
-    'Failed to read the configuration cache. See the following section for more details.' => '構成のキャッシュの読み込みに失敗しました。詳細は下記のセクションを参照してください。',
+    'Failed to configure ITEMAN Dynamic Publishing. See the following section for more details.' => 'ITEMAN Dynamic Publishing の構成に失敗しました。詳細は下記のセクションを参照してください。',
     'Cache' => 'キャッシュ',
     'Cache Directory' => 'キャッシュディレクトリ',
     'The directory is not found or not readable for [_1]' => 'ディレクトリが見つからないか、[_1] ユーザからディレクトリへの読み込み権限がありません',
