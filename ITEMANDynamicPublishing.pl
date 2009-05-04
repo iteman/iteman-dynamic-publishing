@@ -185,50 +185,41 @@ sub _check_error_page_404 {
     my $plugin = shift;
     my $param = shift;
 
-    my $user_name = getpwuid $>;
-    $user_name = $> unless $user_name;
-    unless (-f $param->{error_page_404}) {
-        $param->{error_page_404_error_message} = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
-        die;
-    }
-
-    unless (-r $param->{error_page_404}) {
-        $param->{error_page_404_error_message} = $plugin->translate('The file is not readable for [_1]', $user_name);
-        die;
-    }
-
-    my $error_page_404 = Cwd::abs_path($param->{error_page_404});
-    unless ($error_page_404) {
-        $param->{error_page_404_error_message} =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
-        die;
-    }
-
-    return $error_page_404;
+    $plugin->_check_error_page($param);
 }
 
 sub _check_error_page_500 {
     my $plugin = shift;
     my $param = shift;
 
+    $plugin->_check_error_page($param);
+}
+
+sub _check_error_page {
+    my $plugin = shift;
+    my $param = shift;
+
+    my ($feature) = (caller(1))[3] =~ /(error_page_\d+)$/;
+
     my $user_name = getpwuid $>;
     $user_name = $> unless $user_name;
-    unless (-f $param->{error_page_500}) {
-        $param->{error_page_500_error_message} = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
-        die;
+    unless (-f $param->{$feature}) {
+        $param->{ $feature . '_error_message' } = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
+        die $param->{ $feature . '_error_message' };
     }
 
-    unless (-r $param->{error_page_500}) {
-        $param->{error_page_500_error_message} = $plugin->translate('The file is not readable for [_1]', $user_name);
-        die;
+    unless (-r $param->{$feature}) {
+        $param->{ $feature . '_error_message' } = $plugin->translate('The file is not readable for [_1]', $user_name);
+        die $param->{ $feature . '_error_message' };
     }
 
-    my $error_page_500 = Cwd::abs_path($param->{error_page_500});
-    unless ($error_page_500) {
-        $param->{error_page_500_error_message} =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
-        die;
+    my $abs_path = Cwd::abs_path($param->{$feature});
+    unless ($abs_path) {
+        $param->{ $feature . '_error_message' } =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
+        die $param->{ $feature . '_error_message' };
     }
 
-    return $error_page_500;
+    return $abs_path;
 }
 
 1;
