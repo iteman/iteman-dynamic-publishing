@@ -48,6 +48,19 @@ our $VERSION = '0.1.0';
                 utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
                     or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
             },
+            'MT::FileInfo::post_insert' => sub {
+                my ($cb, $app, $obj) = @_;
+                ITEMAN::DynamicPublishing::Cache->new->remove(
+                    'fileinfo' . $obj->url . $obj->blog_id
+                    );
+            },
+            'MT::FileInfo::post_remove' => sub {
+                my ($cb, $app, $obj) = @_;
+                unlink $obj->file_path if -f $obj->file_path;
+                ITEMAN::DynamicPublishing::Cache->new->remove(
+                    'fileinfo' . $obj->url . $obj->blog_id
+                    );
+            },
         },
                                   });
     MT->add_plugin($plugin);
