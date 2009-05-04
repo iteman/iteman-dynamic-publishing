@@ -78,7 +78,19 @@ sub load_config {
         $param->{cache_directory_error} = 1;
     }
 
-    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') && !$param->{cache_directory_error} ? 1 : 0;
+    eval {
+        $param->{error_page_404} = $plugin->_check_error_page_404($param);
+    }; if ($@) {
+        $param->{error_page_404_error} = 1;
+    }
+
+    eval {
+        $param->{error_page_500} = $plugin->_check_error_page_500($param);
+    }; if ($@) {
+        $param->{error_page_500_error} = 1;
+    }
+
+    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') && !$param->{cache_directory_error} && !$param->{error_page_404_error} && !$param->{error_page_500_error} ? 1 : 0;
 }
 
 sub save_config {
@@ -167,6 +179,56 @@ sub _check_cache_directory {
     }
 
     return $cache_directory;
+}
+
+sub _check_error_page_404 {
+    my $plugin = shift;
+    my $param = shift;
+
+    my $user_name = getpwuid $>;
+    $user_name = $> unless $user_name;
+    unless (-f $param->{error_page_404}) {
+        $param->{error_page_404_error_message} = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
+        die;
+    }
+
+    unless (-r $param->{error_page_404}) {
+        $param->{error_page_404_error_message} = $plugin->translate('The file is not readable for [_1]', $user_name);
+        die;
+    }
+
+    my $error_page_404 = Cwd::abs_path($param->{error_page_404});
+    unless ($error_page_404) {
+        $param->{error_page_404_error_message} =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
+        die;
+    }
+
+    return $error_page_404;
+}
+
+sub _check_error_page_500 {
+    my $plugin = shift;
+    my $param = shift;
+
+    my $user_name = getpwuid $>;
+    $user_name = $> unless $user_name;
+    unless (-f $param->{error_page_500}) {
+        $param->{error_page_500_error_message} = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
+        die;
+    }
+
+    unless (-r $param->{error_page_500}) {
+        $param->{error_page_500_error_message} = $plugin->translate('The file is not readable for [_1]', $user_name);
+        die;
+    }
+
+    my $error_page_500 = Cwd::abs_path($param->{error_page_500});
+    unless ($error_page_500) {
+        $param->{error_page_500_error_message} =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
+        die;
+    }
+
+    return $error_page_500;
 }
 
 1;

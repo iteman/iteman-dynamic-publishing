@@ -74,6 +74,9 @@
         <div class="textarea-wrapper">
           <input type="text" size="50" id="idp_error_page_404" name="error_page_404" value="<mt:var name="error_page_404" escape="HTML">" style="width: 100%" />
         </div>
+        <p>
+          <mt:unless name="error_page_404_error"><span class="icon-left icon-success">OK</span><mt:else><span class="icon-left icon-warning"><mt:var name="error_page_404_error_message"></span></mt:unless>
+        </p>
       </div>
     </div>
   </div>
@@ -87,6 +90,9 @@
         <div class="textarea-wrapper">
           <input type="text" size="50" id="idp_error_page_500" name="error_page_500" value="<mt:var name="error_page_500" escape="HTML">" style="width: 100%" />
         </div>
+        <p>
+          <mt:unless name="error_page_500_error"><span class="icon-left icon-success">OK</span><mt:else><span class="icon-left icon-warning"><mt:var name="error_page_500_error_message"></span></mt:unless>
+        </p>
       </div>
     </div>
   </div>
