@@ -130,7 +130,7 @@ sub reset_config {
 
     $plugin->SUPER::reset_config(@_);
 
-    ITEMAN::DynamicPublishing::Cache->new->remove('ITEMAN::DynamicPublishing::Config');
+    ITEMAN::DynamicPublishing::Cache->new->clear;
 }
 
 sub _save_idp_config {
