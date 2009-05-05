@@ -18,6 +18,7 @@
 
 use strict;
 
+use lib "$ENV{MT_HOME}/extlib";
 use lib "$ENV{MT_HOME}/lib";
 use lib "$ENV{MT_HOME}/plugins/ITEMANDynamicPublishing/lib";
 use ITEMAN::DynamicPublishing;
