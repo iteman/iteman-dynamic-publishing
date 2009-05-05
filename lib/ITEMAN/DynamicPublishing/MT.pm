@@ -47,9 +47,9 @@ sub mt {
 
 sub build_template_in_mem {
     my $self = shift;
-    my $params = shift;
+    my $error_page = shift;
 
-    my $tmpl = $self->mt->load_tmpl($params->{error_page}) or die $self->mt->errstr;
+    my $tmpl = $self->mt->load_tmpl($error_page) or die $self->mt->errstr;
 
     require ITEMAN::DynamicPublishing::ServerEnv;
 

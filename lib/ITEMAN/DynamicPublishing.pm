@@ -50,7 +50,7 @@ sub publish {
         my $file_path = $ENV{DOCUMENT_ROOT} . $self->_script_name;
         my $content = $self->_render_as_string($file_path);
         unless (defined $content) {
-            $self->_error_page(404);
+            $self->_respond_for_404;
             return;
         }
 
@@ -63,7 +63,7 @@ sub publish {
     $self->_rebuild_if_required($file_path);
     my $content = $self->_render_as_string($file_path);
     unless (defined $content) {
-        $self->_error_page(404);
+        $self->_respond_for_404;
         return;
     }
 
@@ -120,23 +120,19 @@ sub _respond_for_success {
                     });
 }
 
-sub _error_page {
+sub _respond_for_404 {
     my $self = shift;
-    my $status_code = shift;
 
-    my $error_page = $self->config->{ 'error_page_' . $status_code };
+    my $error_page = $self->config->{error_page_404};
     if ($error_page =~ m!^https?://!) {
         $self->_redirect($error_page);
         return;
     }
 
     $self->_respond({
-        status_code => $status_code,
+        status_code => 404,
         content_type => 'text/html',
-        response_body => $self->mt->build_template_in_mem({
-            error_page => $error_page,
-            status_code => $status_code,
-                                                          }),
+        response_body => $self->mt->build_template_in_mem($error_page),
                     });
 }
 
