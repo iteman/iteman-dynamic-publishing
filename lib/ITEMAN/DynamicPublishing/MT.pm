@@ -37,7 +37,11 @@ sub mt {
 
     my $self = shift;
 
-    $self->{mt} = MT->new unless $self->{mt};
+    unless ($self->{mt}) {
+        $self->{mt} = MT->new;
+        $self->{mt}->set_language('en_US');
+    }
+
     $self->{mt};
 }
 
@@ -45,11 +49,7 @@ sub build_template_in_mem {
     my $self = shift;
     my $params = shift;
 
-    my $tmpl = $self->mt->load_tmpl($params->{error_page});
-    unless ($tmpl) {
-        return $self->mt->load_tmpl($self->config->default('error_page_500')) if $params->{status_code} == 500;
-        return;
-    }
+    my $tmpl = $self->mt->load_tmpl($params->{error_page}) or die $self->mt->errstr;
 
     require ITEMAN::DynamicPublishing::ServerEnv;
 
@@ -57,13 +57,7 @@ sub build_template_in_mem {
     $tmpl->param('idp_server_admin', $ENV{SERVER_ADMIN});
     $tmpl->param('idp_script_name', ITEMAN::DynamicPublishing::ServerEnv->script_name);
 
-    my $output = $self->mt->build_page_in_mem($tmpl);
-    unless ($output) {
-        return $self->mt->load_tmpl($self->config->default('error_page_500')) if $params->{status_code} == 500;
-        return;
-    }
-
-    $output;
+    $self->mt->build_page_in_mem($tmpl) or die $self->mt->errstr;
 }
 
 sub rebuild_from_fileinfo {
@@ -73,7 +67,8 @@ sub rebuild_from_fileinfo {
     my $fileinfo = $self->mt->model('fileinfo')->lookup($fileinfo_id);
     die "The fileinfo object for the id [ $fileinfo_id ] does not found" unless $fileinfo;
 
-    $self->mt->publisher->rebuild_from_fileinfo($fileinfo);
+    $self->mt->publisher->rebuild_from_fileinfo($fileinfo)
+        or die $self->mt->publisher->errstr;
 }
 
 1;
