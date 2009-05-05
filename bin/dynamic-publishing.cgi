@@ -17,6 +17,7 @@
 # along with ITEMAN Dynamic Publishing.  If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
+use warnings;
 
 use lib "$ENV{MT_HOME}/extlib";
 use lib "$ENV{MT_HOME}/lib";

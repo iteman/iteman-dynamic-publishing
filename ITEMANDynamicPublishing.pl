@@ -18,6 +18,7 @@
 package MT::Plugin::ITEMANDynamicPublishing;
 
 use strict;
+use warnings;
 
 use base qw( MT::Plugin );
 use ITEMAN::DynamicPublishing::Config;

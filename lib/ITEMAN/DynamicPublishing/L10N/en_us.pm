@@ -18,6 +18,7 @@
 package ITEMAN::DynamicPublishing::L10N::en_us;
 
 use strict;
+use warnings;
 
 use base qw( ITEMAN::DynamicPublishing::L10N );
 
