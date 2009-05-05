@@ -59,41 +59,21 @@
   </div>
 </div>
 
-<fieldset style="border: 1px solid #AAAAAA;">
-  <legend style="padding: 0 5px 0; margin: 0 5px 5px"><MT_TRANS phrase="Error Pages"></legend>
-  <p class="hint" style="margin:0 10px 10px;">
-    <MT_TRANS phrase="Any error page can be specified for 404 and 505 errors. The value should be one of the absolute path of a HTML file, the absolute path of a MT template file, or a URI for redirection.">
-  </p>
-
-  <div class="field field-left-label pkg">
-    <div class="field-inner">
-      <div class="field-header" style="text-align: left; margin-left: 10px; width: 170px;">
-        <label for="idp_error_page_404"><MT_TRANS phrase="404 (Not Found)"></label>
+<div class="field field-left-label pkg">
+  <div class="field-inner">
+    <div class="field-header" style="text-align: left; width: 180px;">
+      <label for="idp_error_page_404"><MT_TRANS phrase="Error Page for 404 (Not Found)"></label>
+    </div>
+    <div class="field-content" style="margin: 0 10px 0 190px">
+      <div class="textarea-wrapper">
+        <input type="text" size="50" id="idp_error_page_404" name="error_page_404" value="<mt:var name="error_page_404" escape="HTML">" style="width: 100%" />
       </div>
-      <div class="field-content" style="margin: 0 10px 0 190px">
-        <div class="textarea-wrapper">
-          <input type="text" size="50" id="idp_error_page_404" name="error_page_404" value="<mt:var name="error_page_404" escape="HTML">" style="width: 100%" />
-        </div>
-        <p>
-          <mt:unless name="error_page_404_error"><span class="icon-left icon-success">OK</span><mt:else><span class="icon-left icon-warning"><mt:var name="error_page_404_error_message"></span></mt:unless>
-        </p>
-      </div>
+      <p>
+        <mt:unless name="error_page_404_error"><span class="icon-left icon-success">OK</span><mt:else><span class="icon-left icon-warning"><mt:var name="error_page_404_error_message"></span></mt:unless>
+      </p>
+      <p class="hint">
+        <MT_TRANS phrase="Any error page can be specified for the 404 error. The value should be one of the absolute path of a HTML file, the absolute path of a MT template file, or a URI for redirection.">
+      </p>
     </div>
   </div>
-
-  <div class="field field-left-label pkg">
-    <div class="field-inner">
-      <div class="field-header" style="text-align: left; margin-left: 10px; width: 170px;">
-        <label for="idp_error_page_500"><MT_TRANS phrase="500 (Internal Server Error)"></label>
-      </div>
-      <div class="field-content" style="margin: 0 10px 0 190px">
-        <div class="textarea-wrapper">
-          <input type="text" size="50" id="idp_error_page_500" name="error_page_500" value="<mt:var name="error_page_500" escape="HTML">" style="width: 100%" />
-        </div>
-        <p>
-          <mt:unless name="error_page_500_error"><span class="icon-left icon-success">OK</span><mt:else><span class="icon-left icon-warning"><mt:var name="error_page_500_error_message"></span></mt:unless>
-        </p>
-      </div>
-    </div>
-  </div>
-</fieldset>
+</div>

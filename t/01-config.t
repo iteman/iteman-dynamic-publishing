@@ -26,7 +26,7 @@ use File::Spec;
 use File::Basename;
 use Cwd;
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 
 {
     my $config = ITEMAN::DynamicPublishing::Config->new;
@@ -34,15 +34,6 @@ use Test::More tests => 5;
     is(
         Cwd::abs_path($config->error_page_404),
         Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '404.tmpl'))
-        );
-}
-
-{
-    my $config = ITEMAN::DynamicPublishing::Config->new;
-
-    is(
-        Cwd::abs_path($config->error_page_500),
-        Cwd::abs_path(File::Spec->catfile(dirname(__FILE__), '..', 'tmpl', '500.tmpl'))
         );
 }
 

@@ -22,39 +22,18 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use ITEMAN::DynamicPublishing;
-use HTTP::Status;
-use Test::MockObject::Extends;
-use IO::Capture::Stdout;
-use ITEMAN::DynamicPublishing::Config;
 
-use Test::More tests => 6;
+use Test::More tests => 1;
 
 {
-    my $error_page_500 = '/path/to/500.tmpl';
-
-    my $mock = Test::MockObject->new;
-    $mock->mock('build_template_in_mem', sub { $_[1]->{error_page} });
-
-    my $config = ITEMAN::DynamicPublishing::Config->new;
-    $config->error_page_500($error_page_500);
-
-    my $publishing = ITEMAN::DynamicPublishing->new;
-    $publishing->mt($mock);
-    $publishing->config($config);
-
-    my $capture = IO::Capture::Stdout->new;
-    $capture->start;
-    $publishing->publish;
-    $capture->stop;
-    my @output = $capture->read;
-    chomp @output;
-
-    is(@output, 5);
-    is($output[0], 'Status: ' . 500 . ' ' . status_message(500));
-    is($output[1], 'Content-Length: ' . length($error_page_500));
-    is($output[2], 'Content-Type: ' . 'text/html');
-    is($output[3], '');
-    is($output[4], $error_page_500);
+    eval {
+        ITEMAN::DynamicPublishing->new->publish;
+    };
+    if ($@) {
+        pass;
+    } else {
+        fail 'An expected error has not been raised';
+    }
 }
 
 # Local Variables:

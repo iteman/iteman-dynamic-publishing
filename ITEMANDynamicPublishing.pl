@@ -69,7 +69,6 @@ our $VERSION = '0.1.0';
     my $settings = [
         [ 'directory_index', { Default => ITEMAN::DynamicPublishing::Config->default('directory_index'), Scope => 'system'} ],
         [ 'error_page_404', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_404'), Scope => 'system'} ],
-        [ 'error_page_500', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_500'), Scope => 'system'} ],
         ];
     $plugin->settings(MT::PluginSettings->new($settings));
 }
@@ -98,13 +97,7 @@ sub load_config {
         $param->{error_page_404_error} = 1;
     }
 
-    eval {
-        $param->{error_page_500} = $plugin->_check_error_page_500($param);
-    }; if ($@) {
-        $param->{error_page_500_error} = 1;
-    }
-
-    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') && !$param->{cache_directory_error} && !$param->{error_page_404_error} && !$param->{error_page_500_error} ? 1 : 0;
+    $param->{is_configured} = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') && !$param->{cache_directory_error} && !$param->{error_page_404_error} ? 1 : 0;
 }
 
 sub save_config {
@@ -130,10 +123,6 @@ sub save_config {
         return $plugin->error($plugin->translate('The error page for the status code 404 is required'));
     }
 
-    if ($param->{error_page_500} eq '') {
-        return $plugin->error($plugin->translate('The error page for the status code 500 is required'));
-    }
-
     $plugin->SUPER::save_config(@_);
 
     $plugin->_save_idp_config($param);
@@ -154,7 +143,6 @@ sub _save_idp_config {
     my $config = ITEMAN::DynamicPublishing::Config->new;
     $config->directory_index($param->{directory_index});
     $config->error_page_404($param->{error_page_404});
-    $config->error_page_500($param->{error_page_500});
     $config->db_dsn($MT::Object::DRIVER->fallback->dsn);
     $config->db_user($MT::Object::DRIVER->fallback->username);
     $config->db_password($MT::Object::DRIVER->fallback->password);
@@ -199,38 +187,24 @@ sub _check_error_page_404 {
     my $plugin = shift;
     my $param = shift;
 
-    $plugin->_check_error_page($param);
-}
-
-sub _check_error_page_500 {
-    my $plugin = shift;
-    my $param = shift;
-
-    $plugin->_check_error_page($param);
-}
-
-sub _check_error_page {
-    my $plugin = shift;
-    my $param = shift;
-
     my ($feature) = (caller(1))[3] =~ /(error_page_\d+)$/;
 
     my $user_name = getpwuid $>;
     $user_name = $> unless $user_name;
-    unless (-f $param->{$feature}) {
-        $param->{ $feature . '_error_message' } = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
-        die $param->{ $feature . '_error_message' };
+    unless (-f $param->{error_page_404}) {
+        $param->{error_page_404_error_message} = $plugin->translate('The file is not found or not readable for [_1]', $user_name);
+        die $param->{error_page_404_error_message};
     }
 
-    unless (-r $param->{$feature}) {
-        $param->{ $feature . '_error_message' } = $plugin->translate('The file is not readable for [_1]', $user_name);
-        die $param->{ $feature . '_error_message' };
+    unless (-r $param->{error_page_404}) {
+        $param->{error_page_404_error_message} = $plugin->translate('The file is not readable for [_1]', $user_name);
+        die $param->{error_page_404_error_message};
     }
 
-    my $abs_path = Cwd::abs_path($param->{$feature});
+    my $abs_path = Cwd::abs_path($param->{error_page_404});
     unless ($abs_path) {
-        $param->{ $feature . '_error_message' } =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
-        die $param->{ $feature . '_error_message' };
+        $param->{error_page_404_error_message} =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
+        die $param->{error_page_404_error_message};
     }
 
     return $abs_path;
