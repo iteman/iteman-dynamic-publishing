@@ -38,8 +38,7 @@ sub publish {
     $self->_init_mt unless $self->mt;
 
     unless (exists $ENV{IDP_BLOG_ID}) {
-        $self->_error_page(500);
-        return;
+        die 'The environment variable IDP_BLOG_ID does not found';
     }
 
     $self->_blog_id($ENV{IDP_BLOG_ID});
@@ -279,16 +278,14 @@ sub _rebuild_if_required {
     eval {
         my $mtime = $self->_mtime($file_path);
         unless ($mtime) {
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id})
-                or die "Failed to rebuild $file_path";
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
 
         unless ($self->_is_up_to_date($mtime)) {
             unlink $file_path
                 or die "Failed to remove $file_path what will be rebuilt";
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id})
-                or die "Failed to rebuild $file_path";
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     }; if ($@) {
         $self->_unlock_for_rebuild;
