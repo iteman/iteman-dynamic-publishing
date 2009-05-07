@@ -25,12 +25,11 @@ use File::Basename;
 
 use constant PLUGIN_NAME => 'ITEMAN Dynamic Publishing';
 use constant PLUGIN_ID => 'itemandynamicpublishing';
-use constant CACHE_DIRECTORY => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp');
-use constant REBUILD_TOUCH_FILE => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmp', '.objects-save');
+use constant PLUGIN_DIRECTORY => File::Spec->catfile(dirname(__FILE__), '..', '..', '..');
 
 my %features_decl = (
     'directory_index' => 'index.html',
-    'error_page_404' => File::Spec->catfile(dirname(__FILE__), '..', '..', '..', 'tmpl', '404.tmpl'),
+    'error_page_404' => File::Spec->catfile(PLUGIN_DIRECTORY, 'tmpl', '404.tmpl'),
     'db_dsn' => undef,
     'db_user' => undef,
     'db_password' => undef,
@@ -60,6 +59,14 @@ sub default {
 
     die "Use of undefined configuration $feature" unless exists $features_decl{$feature};
     $features_decl{$feature};
+}
+
+sub CACHE_DIRECTORY {
+    return File::Spec->catfile(PLUGIN_DIRECTORY, 'tmp');
+}
+
+sub REBUILD_TOUCH_FILE {
+    return File::Spec->catfile(CACHE_DIRECTORY, '.objects-save');
 }
 
 1;

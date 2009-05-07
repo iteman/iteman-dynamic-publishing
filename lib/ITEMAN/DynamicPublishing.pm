@@ -35,7 +35,7 @@ sub publish {
     my $self = shift;
 
     $self->_init_config unless $self->config;
-    $self->_init_mt unless $self->mt;
+    $self->_init_mt unless $self->_mt;
     $self->_init_script_name;
 
     my $file_path = $ENV{DOCUMENT_ROOT} . $self->_script_name;
@@ -68,13 +68,6 @@ sub config {
 
     $self->{config} = shift if @_;
     $self->{config};
-}
-
-sub mt {
-    my $self = shift;
-
-    $self->{mt} = shift if @_;
-    $self->{mt};
 }
 
 sub _respond_for_success {
@@ -125,7 +118,7 @@ sub _respond_for_404 {
     $self->_respond({
         status_code => 404,
         content_type => 'text/html',
-        response_body => $self->mt->build_template_in_mem($error_page),
+        response_body => $self->_mt->build_template_in_mem($error_page),
                     });
 }
 
@@ -138,7 +131,7 @@ sub _init_config {
 sub _init_mt {
     my $self = shift;
 
-    $self->mt(ITEMAN::DynamicPublishing::MT->new($self->config));
+    $self->_mt(ITEMAN::DynamicPublishing::MT->new($self->config));
 }
 
 sub _init_script_name {
@@ -162,6 +155,13 @@ sub _fileinfo {
 
     $self->{fileinfo} = shift if @_;
     $self->{fileinfo};
+}
+
+sub _mt {
+    my $self = shift;
+
+    $self->{mt} = shift if @_;
+    $self->{mt};
 }
 
 sub _redirect {
@@ -199,17 +199,25 @@ sub _load_fileinfo {
     my $cache = ITEMAN::DynamicPublishing::Cache->new;
     $cache->cache({
         cache_id => 'fileinfo' . $file_path,
-        object_loader => sub {
-            require DBI;
+        object_loader => $self->_create_object_loader_for_fileinfo($file_path),
+                  });
+}
 
-            my $dbh = DBI->connect_cached(
-                $self->config->db_dsn,
-                $self->config->db_user,
-                $self->config->db_password,
-                { RaiseError => 1, PrintError => 0 }
-                );
-            $dbh->selectrow_hashref(
-                '
+sub _create_object_loader_for_fileinfo {
+    my $self = shift;
+    my $file_path = shift;
+
+    return sub {
+        require DBI;
+
+        DBI->connect_cached(
+            $self->config->db_dsn,
+            $self->config->db_user,
+            $self->config->db_password,
+            { RaiseError => 1, PrintError => 0 }
+            )
+           ->selectrow_hashref(
+        '
 SELECT
   fileinfo_id,
   fileinfo_entry_id,
@@ -219,11 +227,9 @@ FROM
 WHERE
   fileinfo_file_path = ?
 ',
-                {},
-                ($file_path)
-                );
-        }
-                  });
+        {}, ($file_path)
+            );
+    };
 }
 
 sub _render_as_string {
@@ -259,14 +265,14 @@ sub _rebuild_if_required {
     eval {
         my $mtime = $self->_mtime($file_path);
         unless ($mtime) {
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $self->_mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
 
         unless ($self->_is_up_to_date($mtime)) {
             unlink $file_path
                 or die "Failed to remove $file_path what will be rebuilt";
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $self->_mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     };
     if ($@) {

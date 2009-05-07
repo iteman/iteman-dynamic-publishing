@@ -22,18 +22,106 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use ITEMAN::DynamicPublishing;
+use File::Basename;
+use File::Spec;
+use IO::Capture::Stdout;
+use HTTP::Status;
+use Test::MockObject::Extends;
+use ITEMAN::DynamicPublishing::Config;
+use Test::MockObject;
+use HTTP::Date;
+use Digest::MD5;
+use IO::File;
 
-use Test::More tests => 1;
+use Test::More tests => 8;
 
 {
-    eval {
-        ITEMAN::DynamicPublishing->new->publish;
-    };
-    if ($@) {
-        pass;
-    } else {
-        fail 'An expected error has not been raised';
-    }
+    local $ENV{REQUEST_URI} = '/';
+    local $ENV{DOCUMENT_ROOT} = File::Spec->catfile($FindBin::Bin, basename($FindBin::Script, '.t'));
+
+    my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
+    print $fh <<EOF;
+<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+EOF
+    $fh->close;
+
+    no warnings 'redefine';
+    *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $ENV{DOCUMENT_ROOT} };
+
+    my $mt = Test::MockObject->new;
+    $mt->fake_module('MT');
+    $mt->fake_new('MT');
+    $mt->set_true('set_language');
+    $mt->mock('model', sub {
+        return MT::FileInfo->new;
+              }
+        );
+    $mt->mock('publisher', sub {
+        return MT::WeblogPublisher->new;
+              }
+        );
+    $mt->mock('load_tmpl', sub {
+        return MT::Template->new;
+              }
+        );
+    $mt->set_true('build_page_in_mem');
+    $mt->set_true('errstr');
+
+    my $fileinfo = Test::MockObject->new;
+    $fileinfo->fake_module('MT::FileInfo');
+    $fileinfo->fake_new('MT::FileInfo');
+    $fileinfo->set_true('lookup');
+
+    my $publisher = Test::MockObject->new;
+    $publisher->fake_module('MT::WeblogPublisher');
+    $publisher->fake_new('MT::WeblogPublisher');
+    $publisher->set_true('rebuild_from_fileinfo');
+
+    my $template = Test::MockObject->new;
+    $template->fake_module('MT::Template');
+    $template->fake_new('MT::Template');
+    $template->set_true('param');
+ 
+    my $publishing = ITEMAN::DynamicPublishing->new;
+    $publishing = Test::MockObject::Extends->new($publishing);
+    $publishing->mock('_create_object_loader_for_fileinfo', sub {
+        return sub {
+            {
+                fileinfo_id => 1,
+                fileinfo_entry_id => undef,
+                fileinfo_template_id => 1,
+            };
+        };
+                      }
+        );
+
+    my $capture = IO::Capture::Stdout->new;
+    $capture->start;
+    $publishing->publish;
+    $capture->stop;
+    my @output = $capture->read;
+    chomp @output;
+ 
+    my $response_body = $publishing->_render_as_string(
+        File::Spec->catfile($ENV{DOCUMENT_ROOT}, $publishing->_script_name)
+        );
+
+    is(@output, 7);
+    is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
+    is($output[1], 'Content-Length: ' . length($response_body));
+    is($output[2], 'Content-Type: ' . 'text/html');
+    is($output[3], 'Last-Modified: ' . HTTP::Date::time2str($publishing->_mtime($ENV{DOCUMENT_ROOT}, $publishing->_script_name)));
+    is($output[4], 'ETag: ' . Digest::MD5::md5_hex($response_body));
+    is($output[5], '');
+    is($output[6] . "\n", $response_body);
+
+    ITEMAN::DynamicPublishing::Cache->new->clear;
 }
 
 # Local Variables:
