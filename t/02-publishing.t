@@ -30,8 +30,8 @@ use Test::MockObject::Extends;
 use ITEMAN::DynamicPublishing::Config;
 use Test::MockObject;
 use HTTP::Date;
-use Digest::MD5;
 use IO::File;
+use ITEMAN::DynamicPublishing::File;
 
 use Test::More tests => 8;
 
@@ -108,16 +108,16 @@ EOF
     my @output = $capture->read;
     chomp @output;
  
-    my $response_body = $publishing->_render_as_string(
-        File::Spec->catfile($ENV{DOCUMENT_ROOT}, $publishing->_script_name)
+    my $response_body = ITEMAN::DynamicPublishing::File->get_content(
+        File::Spec->catfile($publishing->file)
         );
 
     is(@output, 7);
     is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
     is($output[1], 'Content-Length: ' . length($response_body));
     is($output[2], 'Content-Type: ' . 'text/html');
-    is($output[3], 'Last-Modified: ' . HTTP::Date::time2str($publishing->_mtime($ENV{DOCUMENT_ROOT}, $publishing->_script_name)));
-    is($output[4], 'ETag: ' . Digest::MD5::md5_hex($response_body));
+    is($output[3], 'Last-Modified: ' . $publishing->generate_last_modified($publishing->file));
+    is($output[4], 'ETag: ' . $publishing->generate_etag($response_body));
     is($output[5], '');
     is($output[6] . "\n", $response_body);
 

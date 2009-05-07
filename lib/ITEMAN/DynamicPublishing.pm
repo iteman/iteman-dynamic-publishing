@@ -24,6 +24,7 @@ use ITEMAN::DynamicPublishing::Config;
 use ITEMAN::DynamicPublishing::Cache;
 use ITEMAN::DynamicPublishing::ServerEnv;
 use ITEMAN::DynamicPublishing::MT;
+use ITEMAN::DynamicPublishing::File;
 use Fcntl qw(:flock);
 
 sub new {
@@ -38,29 +39,28 @@ sub publish {
     $self->_init_mt unless $self->_mt;
     $self->_init_script_name;
 
-    my $file_path = $ENV{DOCUMENT_ROOT} . $self->_script_name;
-
-    $self->_fileinfo($self->_load_fileinfo($file_path));
+    $self->file($ENV{DOCUMENT_ROOT} . $self->_script_name);
+    $self->_fileinfo($self->_load_fileinfo);
 
     unless ($self->_fileinfo) {
-        my $content = $self->_render_as_string($file_path);
+        my $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
         unless (defined $content) {
             $self->_respond_for_404;
             return;
         }
 
-        $self->_respond_for_success({ file_path => $file_path, content => $content });
+        $self->_respond_for_success({ file => $self->file, content => $content });
         return;
     }
 
-    $self->_rebuild_if_required($file_path);
-    my $content = $self->_render_as_string($file_path);
+    $self->_rebuild_if_required;
+    my $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
     unless (defined $content) {
         $self->_respond_for_404;
         return;
     }
 
-    $self->_respond_for_success({ file_path => $file_path, content => $content });
+    $self->_respond_for_success({ file => $self->file, content => $content });
 }
 
 sub config {
@@ -70,15 +70,37 @@ sub config {
     $self->{config};
 }
 
-sub _respond_for_success {
-    require HTTP::Date;
+sub file {
+    my $self = shift;
+
+    $self->{file} = shift if @_;
+    $self->{file};
+}
+
+sub generate_etag {
     require Digest::MD5;
 
     my $self = shift;
+    my $content = shift;
+
+    Digest::MD5::md5_hex($content);
+}
+
+sub generate_last_modified {
+    require HTTP::Date;
+
+    my $self = shift;
+    my $file = shift;
+
+    HTTP::Date::time2str(ITEMAN::DynamicPublishing::File->mtime($file));
+}
+
+sub _respond_for_success {
+    my $self = shift;
     my $params = shift;
 
-    my $last_modified = HTTP::Date::time2str($self->_mtime($params->{file_path}));
-    my $etag = Digest::MD5::md5_hex($params->{content});
+    my $last_modified = $self->generate_last_modified($params->{file});
+    my $etag = $self->generate_etag($params->{content});
 
     unless ($self->_is_modified({
         'Last-Modified' => $last_modified,
@@ -97,7 +119,7 @@ sub _respond_for_success {
 
     $self->_respond({
         status_code => 200,
-        content_type => $self->_content_type_by_extension($params->{file_path}),
+        content_type => $self->_content_type_by_extension($params->{file}),
         response_body => $params->{content},
         headers => {
             'Last-Modified' => $last_modified,
@@ -194,18 +216,16 @@ sub _respond {
 
 sub _load_fileinfo {
     my $self = shift;
-    my $file_path = shift;
 
     my $cache = ITEMAN::DynamicPublishing::Cache->new;
     $cache->cache({
-        cache_id => 'fileinfo' . $file_path,
-        object_loader => $self->_create_object_loader_for_fileinfo($file_path),
+        cache_id => 'fileinfo' . $self->file,
+        object_loader => $self->_create_object_loader_for_fileinfo,
                   });
 }
 
 sub _create_object_loader_for_fileinfo {
     my $self = shift;
-    my $file_path = shift;
 
     return sub {
         require DBI;
@@ -227,27 +247,16 @@ FROM
 WHERE
   fileinfo_file_path = ?
 ',
-        {}, ($file_path)
+        {}, ($self->file)
             );
     };
 }
 
-sub _render_as_string {
-    my $self = shift;
-    my $file_path = shift;
-
-    open CONTENT, "< $file_path" or return;
-    my @contents = <CONTENT>;
-    close CONTENT;
- 
-    join('', @contents);
-}
-
 sub _content_type_by_extension {
     my $self = shift;
-    my $file_path = shift;
+    my $file = shift;
  
-    my ($file_extension) = $file_path =~ m/\.([^.]+)$/;
+    my ($file_extension) = $file =~ m/\.([^.]+)$/;
  
     return 'application/octet-stream' unless defined $file_extension;
     return 'text/html' if $file_extension eq 'html';
@@ -258,20 +267,19 @@ sub _content_type_by_extension {
 
 sub _rebuild_if_required {
     my $self = shift;
-    my $file_path = shift;
 
     while (!$self->_lock_for_rebuild) {}
 
     eval {
-        my $mtime = $self->_mtime($file_path);
+        my $mtime = ITEMAN::DynamicPublishing::File->mtime($self->file);
         unless ($mtime) {
             $self->_mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
 
         unless ($self->_is_up_to_date($mtime)) {
-            unlink $file_path
-                or die "Failed to remove $file_path what will be rebuilt";
+            unlink $self->file
+                or die 'Failed to remove ' . $self->file . ' what will be rebuilt';
             $self->_mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     };
@@ -307,7 +315,7 @@ sub _is_up_to_date {
     my $self = shift;
     my $target_file_mtime = shift;
 
-    my $rebuild_touch_file_mtime = $self->_mtime(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+    my $rebuild_touch_file_mtime = ITEMAN::DynamicPublishing::File->mtime(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
         or die 'The file [ ' . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE . ' ] does not found';
     return $target_file_mtime >= $rebuild_touch_file_mtime;
 }
@@ -323,16 +331,6 @@ sub _is_modified {
       and exists $ENV{HTTP_IF_NONE_MATCH}
       and $ENV{HTTP_IF_NONE_MATCH} eq $params->{'ETag'}
         );
-}
-
-sub _mtime {
-    my $self = shift;
-    my $file = shift;
-
-    my @status_info = stat $file;
-    return unless @status_info;
-
-    $status_info[9];
 }
 
 1;
