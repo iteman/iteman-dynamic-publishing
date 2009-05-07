@@ -42,7 +42,8 @@ use Test::More tests => 4;
     {
       eval {
           $config->non_existing_feature;
-      }; if ($@) {
+      };
+      if ($@) {
           pass;
           last ;
       }

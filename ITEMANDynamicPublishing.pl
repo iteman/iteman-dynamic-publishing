@@ -96,13 +96,15 @@ sub load_config {
 
     eval {
         $param->{cache_directory} = $plugin->_check_cache_directory($param);
-    }; if ($@) {
+    };
+    if ($@) {
         $param->{cache_directory_error} = 1;
     }
 
     eval {
         $param->{error_page_404} = $plugin->_check_error_page_404($param);
-    }; if ($@) {
+    };
+    if ($@) {
         $param->{error_page_404_error} = 1;
     }
 

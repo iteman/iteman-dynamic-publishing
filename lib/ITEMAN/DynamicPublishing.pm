@@ -268,7 +268,8 @@ sub _rebuild_if_required {
                 or die "Failed to remove $file_path what will be rebuilt";
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
-    }; if ($@) {
+    };
+    if ($@) {
         $self->_unlock_for_rebuild;
         die $@;
     }
