@@ -83,6 +83,15 @@ sub load_config {
         eval { $plugin->_save_idp_config($param) };
     }
 
+    unless (-f ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE) {
+        eval {
+            open REBUILD_TOUCH_FILE, '> ' . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE or die;
+        };
+        unless ($@) {
+            close REBUILD_TOUCH_FILE;
+        }
+    }
+
     $param->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
     eval {
