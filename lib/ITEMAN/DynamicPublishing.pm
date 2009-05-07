@@ -36,18 +36,13 @@ sub publish {
 
     $self->_init_config unless $self->config;
     $self->_init_mt unless $self->mt;
-
-    unless (exists $ENV{IDP_BLOG_ID}) {
-        die 'The environment variable IDP_BLOG_ID does not found';
-    }
-
-    $self->_blog_id($ENV{IDP_BLOG_ID});
     $self->_init_script_name;
 
-    $self->_fileinfo($self->_load_fileinfo);
+    my $file_path = $ENV{DOCUMENT_ROOT} . $self->_script_name;
+
+    $self->_fileinfo($self->_load_fileinfo($file_path));
 
     unless ($self->_fileinfo) {
-        my $file_path = $ENV{DOCUMENT_ROOT} . $self->_script_name;
         my $content = $self->_render_as_string($file_path);
         unless (defined $content) {
             $self->_respond_for_404;
@@ -58,8 +53,6 @@ sub publish {
         return;
     }
 
-    my $file_path = -f $self->_fileinfo->{fileinfo_file_path} ? $self->_fileinfo->{fileinfo_file_path}
-                                                              : $ENV{DOCUMENT_ROOT} . $self->_script_name;
     $self->_rebuild_if_required($file_path);
     my $content = $self->_render_as_string($file_path);
     unless (defined $content) {
@@ -164,13 +157,6 @@ sub _script_name {
     $self->{script_name};
 }
 
-sub _blog_id {
-    my $self = shift;
-
-    $self->{blog_id} = shift if @_;
-    $self->{blog_id};
-}
-
 sub _fileinfo {
     my $self = shift;
 
@@ -208,10 +194,11 @@ sub _respond {
 
 sub _load_fileinfo {
     my $self = shift;
+    my $file_path = shift;
 
     my $cache = ITEMAN::DynamicPublishing::Cache->new;
     $cache->cache({
-        cache_id => 'fileinfo' . $self->_script_name . $self->_blog_id,
+        cache_id => 'fileinfo' . $file_path,
         object_loader => sub {
             require DBI;
 
@@ -226,16 +213,14 @@ sub _load_fileinfo {
 SELECT
   fileinfo_id,
   fileinfo_entry_id,
-  fileinfo_template_id,
-  fileinfo_file_path
+  fileinfo_template_id
 FROM
   mt_fileinfo
 WHERE
-  fileinfo_url = ?
-  AND fileinfo_blog_id = ?
+  fileinfo_file_path = ?
 ',
                 {},
-                ($self->_script_name, $self->_blog_id)
+                ($file_path)
                 );
         }
                   });
@@ -296,19 +281,19 @@ sub _lock_for_rebuild {
 
     my $self = shift;
 
-    my $touch_file = File::Spec->catfile(
+    my $lock_file = File::Spec->catfile(
         ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY,
         '.page-rebuild-' . $self->_fileinfo->{fileinfo_id}
         );
-    open REBUILD_TOUCH_FILE, "> $touch_file"
+    open REBUILD_LOCK_FILE, "> $lock_file"
         or die "The lock for rebuilding a page failed: $!";
 
-    flock REBUILD_TOUCH_FILE, LOCK_EX;
+    flock REBUILD_LOCK_FILE, LOCK_EX;
 }
 
 sub _unlock_for_rebuild {
-    flock REBUILD_TOUCH_FILE, LOCK_UN;
-    close REBUILD_TOUCH_FILE;
+    flock REBUILD_LOCK_FILE, LOCK_UN;
+    close REBUILD_LOCK_FILE;
 }
 
 sub _is_up_to_date {
