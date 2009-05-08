@@ -33,6 +33,9 @@ dist:
 	mkdir -p build/$(PLUGIN_NAME)
 	cp -r $(TARGETS) build/$(PLUGIN_NAME)
 	mkdir -p build/$(PLUGIN_NAME)/tmp
+	find build/$(PLUGIN_NAME) -type d | xargs chmod 755
+	find build/$(PLUGIN_NAME) -type f | xargs chmod 644
+	chmod 755 build/$(PLUGIN_NAME)/bin/*.cgi
 	mkdir dist
 	cd build; \
 	zip -r ../dist/$(PLUGIN_NAME)-$(PLUGIN_VERSION).zip $(PLUGIN_NAME)
