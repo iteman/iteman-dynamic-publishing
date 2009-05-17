@@ -35,23 +35,11 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 {
     local $ENV{REQUEST_URI} = '/';
     local $ENV{DOCUMENT_ROOT} = File::Spec->catfile($FindBin::Bin, basename($FindBin::Script, '.t'));
-
-    my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
-    print $fh <<EOF;
-<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-EOF
-    $fh->close;
 
     no warnings 'redefine';
     *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $ENV{DOCUMENT_ROOT} };
@@ -68,12 +56,6 @@ EOF
         return MT::WeblogPublisher->new;
               }
         );
-    $mt->mock('load_tmpl', sub {
-        return MT::Template->new;
-              }
-        );
-    $mt->set_true('build_page_in_mem');
-    $mt->set_true('errstr');
 
     my $fileinfo = Test::MockObject->new;
     $fileinfo->fake_module('MT::FileInfo');
@@ -83,13 +65,21 @@ EOF
     my $publisher = Test::MockObject->new;
     $publisher->fake_module('MT::WeblogPublisher');
     $publisher->fake_new('MT::WeblogPublisher');
-    $publisher->set_true('rebuild_from_fileinfo');
+    $publisher->mock('rebuild_from_fileinfo', sub {
+        my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
+        print $fh <<EOF;
+<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+EOF
+        $fh->close;
+                     }
+        );
 
-    my $template = Test::MockObject->new;
-    $template->fake_module('MT::Template');
-    $template->fake_new('MT::Template');
-    $template->set_true('param');
- 
     my $publishing = ITEMAN::DynamicPublishing->new;
     $publishing = Test::MockObject::Extends->new($publishing);
     $publishing->mock('_create_object_loader_for_fileinfo', sub {
@@ -114,6 +104,7 @@ EOF
         File::Spec->catfile($publishing->file)
         );
 
+    ok(-e File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'));
     is(@output, 7);
     is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
     is($output[1], 'Content-Length: ' . length($response_body));
@@ -146,8 +137,6 @@ EOF
     *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $ENV{DOCUMENT_ROOT} };
 
     my $mt = Test::MockObject->new;
-    # $mt->fake_module('MT');
-    $mt->fake_new('MT');
     $mt->set_true('set_language');
     $mt->mock('model', sub {
         return MT::FileInfo->new;
@@ -157,21 +146,25 @@ EOF
         return MT::WeblogPublisher->new;
               }
         );
-    $mt->mock('load_tmpl', sub {
-        return MT::Template->new;
-              }
-        );
-    $mt->set_true('build_page_in_mem');
-    $mt->set_true('errstr');
 
     my $fileinfo = Test::MockObject->new;
     $fileinfo->set_true('lookup');
 
     my $publisher = Test::MockObject->new;
-    $publisher->set_true('rebuild_from_fileinfo');
-
-    my $template = Test::MockObject->new;
-    $template->set_true('param');
+    $publisher->mock('rebuild_from_fileinfo', sub {
+        my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
+        print $fh <<EOF;
+<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+EOF
+        $fh->close;
+                     }
+        );
 
     my $object_loader_called = 0;
     my $publishing = ITEMAN::DynamicPublishing->new;
