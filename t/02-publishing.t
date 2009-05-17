@@ -33,8 +33,9 @@ use Test::MockObject;
 use HTTP::Date;
 use IO::File;
 use ITEMAN::DynamicPublishing::File;
+use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 8;
+use Test::More tests => 10;
 
 {
     local $ENV{REQUEST_URI} = '/';
@@ -121,6 +122,76 @@ EOF
     is($output[4], 'ETag: ' . $publishing->generate_etag($response_body));
     is($output[5], '');
     is($output[6] . "\n", $response_body);
+
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+}
+
+{
+    local $ENV{REQUEST_URI} = '/';
+    local $ENV{DOCUMENT_ROOT} = File::Spec->catfile($FindBin::Bin, basename($FindBin::Script, '.t'));
+
+    my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
+    print $fh <<EOF;
+<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+EOF
+    $fh->close;
+
+    no warnings 'redefine';
+    *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $ENV{DOCUMENT_ROOT} };
+
+    my $mt = Test::MockObject->new;
+    # $mt->fake_module('MT');
+    $mt->fake_new('MT');
+    $mt->set_true('set_language');
+    $mt->mock('model', sub {
+        return MT::FileInfo->new;
+              }
+        );
+    $mt->mock('publisher', sub {
+        return MT::WeblogPublisher->new;
+              }
+        );
+    $mt->mock('load_tmpl', sub {
+        return MT::Template->new;
+              }
+        );
+    $mt->set_true('build_page_in_mem');
+    $mt->set_true('errstr');
+
+    my $fileinfo = Test::MockObject->new;
+    $fileinfo->set_true('lookup');
+
+    my $publisher = Test::MockObject->new;
+    $publisher->set_true('rebuild_from_fileinfo');
+
+    my $template = Test::MockObject->new;
+    $template->set_true('param');
+
+    my $object_loader_called = 0;
+    my $publishing = ITEMAN::DynamicPublishing->new;
+    $publishing = Test::MockObject::Extends->new($publishing);
+    $publishing->mock('_create_object_loader_for_fileinfo', sub {
+        return sub {
+            $object_loader_called = 1;
+            undef
+        };
+                      }
+        );
+
+    $publishing->publish;
+
+    is($object_loader_called, 1);
+
+    $object_loader_called = 0;
+    $publishing->publish;
+
+    is($object_loader_called, 0);
 
     ITEMAN::DynamicPublishing::Cache->new->clear;
 }

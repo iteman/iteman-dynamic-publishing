@@ -34,12 +34,12 @@ sub cache {
     my $self = shift;
     my $params = shift;
 
-    my $object = $self->load($params->{cache_id});
-    return $object if $object;
+    if ($self->exists($params->{cache_id})) {
+        return $self->load($params->{cache_id});
+    }
 
-    $object = $params->{object_loader}->();
+    my $object = $params->{object_loader}->();
     $self->save({ cache_id => $params->{cache_id}, data => $object });
-
     $object;
 }
 
@@ -107,6 +107,15 @@ sub remove {
 
     my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
     unlink $cache_file;
+}
+
+sub exists {
+    my $self = shift;
+    my $cache_id = shift;
+
+    return undef unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
+
+    -e ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
 }
 
 1;
