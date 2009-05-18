@@ -37,12 +37,16 @@ use ITEMAN::DynamicPublishing::Cache;
 
 use Test::More tests => 11;
 
-{
-    local $ENV{REQUEST_URI} = '/';
-    local $ENV{DOCUMENT_ROOT} = File::Spec->catfile($FindBin::Bin, basename($FindBin::Script, '.t'));
+my $cache_directory;
+local $ENV{DOCUMENT_ROOT} = $cache_directory;
+local $ENV{REQUEST_URI} = '/';
+
+BEGIN {
+    $cache_directory =
+        File::Spec->catfile($FindBin::Bin, basename($FindBin::Script, '.t'));
 
     no warnings 'redefine';
-    *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $ENV{DOCUMENT_ROOT} };
+    *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $cache_directory };
 
     my $mt = Test::MockObject->new;
     $mt->fake_module('MT');
@@ -65,20 +69,11 @@ use Test::More tests => 11;
     my $publisher = Test::MockObject->new;
     $publisher->fake_module('MT::WeblogPublisher');
     $publisher->fake_new('MT::WeblogPublisher');
-    $publisher->mock('rebuild_from_fileinfo', sub {
-        my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
-        print $fh <<EOF;
-<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-EOF
-        $fh->close;
-                     }
-        );
+    $publisher->mock('rebuild_from_fileinfo', sub { create_page(); });
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
 
     my $publishing = ITEMAN::DynamicPublishing->new;
     $publishing = Test::MockObject::Extends->new($publishing);
@@ -104,7 +99,7 @@ EOF
         File::Spec->catfile($publishing->file)
         );
 
-    ok(-e File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'));
+    ok(-e File::Spec->catfile($cache_directory, 'index.html'));
     is(@output, 7);
     is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
     is($output[1], 'Content-Length: ' . length($response_body));
@@ -113,58 +108,12 @@ EOF
     is($output[4], 'ETag: ' . $publishing->generate_etag($response_body));
     is($output[5], '');
     is($output[6] . "\n", $response_body);
-
-    ITEMAN::DynamicPublishing::Cache->new->clear;
 }
 
 {
-    local $ENV{REQUEST_URI} = '/';
-    local $ENV{DOCUMENT_ROOT} = File::Spec->catfile($FindBin::Bin, basename($FindBin::Script, '.t'));
+    ITEMAN::DynamicPublishing::Cache->new->clear;
 
-    my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
-    print $fh <<EOF;
-<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-EOF
-    $fh->close;
-
-    no warnings 'redefine';
-    *ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY = sub { $ENV{DOCUMENT_ROOT} };
-
-    my $mt = Test::MockObject->new;
-    $mt->set_true('set_language');
-    $mt->mock('model', sub {
-        return MT::FileInfo->new;
-              }
-        );
-    $mt->mock('publisher', sub {
-        return MT::WeblogPublisher->new;
-              }
-        );
-
-    my $fileinfo = Test::MockObject->new;
-    $fileinfo->set_true('lookup');
-
-    my $publisher = Test::MockObject->new;
-    $publisher->mock('rebuild_from_fileinfo', sub {
-        my $fh = IO::File->new(File::Spec->catfile($ENV{DOCUMENT_ROOT}, 'index.html'), 'w');
-        print $fh <<EOF;
-<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-EOF
-        $fh->close;
-                     }
-        );
+    create_page();
 
     my $object_loader_called = 0;
     my $publishing = ITEMAN::DynamicPublishing->new;
@@ -185,8 +134,24 @@ EOF
     $publishing->publish;
 
     is($object_loader_called, 0);
+}
 
+END {
     ITEMAN::DynamicPublishing::Cache->new->clear;
+}
+
+sub create_page {
+    my $fh = IO::File->new(File::Spec->catfile($cache_directory, 'index.html'), 'w');
+    print $fh <<EOF;
+<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+EOF
+    $fh->close;
 }
 
 # Local Variables:
