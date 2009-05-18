@@ -148,7 +148,9 @@ sub _respond_for_404 {
 sub _init_config {
     my $self = shift;
 
-    $self->config(ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config') or ITEMAN::DynamicPublishing::Config->new);
+    my $config = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config')
+        or die 'Failed to load the configuration object. See the installation guide for more information: http://oss.iteman.jp/wiki/iteman-dynamic-publishing/Installation_and_Configuration_Guide';
+    $self->config($config);
 }
 
 sub _init_mt {
