@@ -25,12 +25,12 @@ use lib "$ENV{MT_HOME}/lib";
 use lib "$ENV{MT_HOME}/plugins/ITEMANDynamicPublishing/lib";
 use ITEMAN::DynamicPublishing;
 
-local $SIG{__DIE__} = sub {
-    return if $^S;
-    die 'IDP: ' . $_[0];
+eval {
+    ITEMAN::DynamicPublishing->new->publish();
 };
-
-ITEMAN::DynamicPublishing->new->publish();
+if ($@) {
+    die 'IDP: ' . $@;
+}
 
 # Local Variables:
 # mode: perl
