@@ -76,6 +76,7 @@ BEGIN {
     ITEMAN::DynamicPublishing::Cache->new->clear;
 
     my $publishing = ITEMAN::DynamicPublishing->new;
+    $publishing->config(ITEMAN::DynamicPublishing::Config->new());
     $publishing = Test::MockObject::Extends->new($publishing);
     $publishing->mock('_create_object_loader_for_fileinfo', sub {
         return sub {
@@ -117,6 +118,7 @@ BEGIN {
 
     my $object_loader_called = 0;
     my $publishing = ITEMAN::DynamicPublishing->new;
+    $publishing->config(ITEMAN::DynamicPublishing::Config->new());
     $publishing = Test::MockObject::Extends->new($publishing);
     $publishing->mock('_create_object_loader_for_fileinfo', sub {
         return sub {
