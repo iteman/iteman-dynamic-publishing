@@ -35,7 +35,7 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 24;
+use Test::More tests => 32;
 
 my $cache_directory;
 local $ENV{DOCUMENT_ROOT} = $cache_directory;
@@ -269,6 +269,65 @@ END {
                 is($mt_called, 0);
             }
         );
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+
+    local $ENV{REQUEST_URI} = '/non-existing.html';
+    my $config = ITEMAN::DynamicPublishing::Config->new;
+    $config->error_page_404(File::Spec->catfile($cache_directory, 'non-existing-404.html'));
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config($config);
+    $publishing->mock('_create_object_loader_for_fileinfo',
+                      sub { return sub { undef } }
+                      );
+
+    my $capture = IO::Capture::Stdout->new;
+    $capture->start;
+    $publishing->publish;
+    $capture->stop;
+    my @output = $capture->read;
+    chomp @output;
+
+    my $response_body = ITEMAN::DynamicPublishing::File->get_content(
+        File::Spec->catfile(ITEMAN::DynamicPublishing::Config->default('error_page_404'))
+        );
+
+    is(@output, 5);
+    is($output[0], 'Status: ' . 404 . ' ' . status_message(404));
+    is($output[1], 'Content-Length: ' . length($response_body));
+    is($output[2], 'Content-Type: ' . 'text/html');
+    is($output[3], '');
+    is($output[4] . "\n", $response_body);
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+
+    no warnings 'redefine';
+    *ITEMAN::DynamicPublishing::Config::default = sub { '/non-existing.tmpl' };
+
+    is(ITEMAN::DynamicPublishing::Config->default('error_page_404'),
+       '/non-existing.tmpl'
+        );
+
+    local $ENV{REQUEST_URI} = '/non-existing.html';
+    my $config = ITEMAN::DynamicPublishing::Config->new;
+    $config->error_page_404(File::Spec->catfile($cache_directory, 'non-existing-404.html'));
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config($config);
+    $publishing->mock('_create_object_loader_for_fileinfo',
+                      sub { return sub { undef } }
+                      );
+
+    eval {
+        $publishing->publish;
+        fail('An expected exception has not been raised');
+    };
+    if ($@) {
+        pass();
+    }
 }
 
 sub create_page {

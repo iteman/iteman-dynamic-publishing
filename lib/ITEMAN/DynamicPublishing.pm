@@ -138,14 +138,27 @@ sub _respond_for_success {
 
 sub _respond_for_404 {
     my $self = shift;
+    my $error_page = shift || $self->config->{error_page_404};
 
-    my $error_page = $self->config->{error_page_404};
     if ($error_page =~ m!^https?://!) {
         $self->_redirect($error_page);
         return;
     }
 
     my $content = ITEMAN::DynamicPublishing::File->get_content($error_page);
+    unless (defined $content) {
+        if ($error_page eq ITEMAN::DynamicPublishing::Config->default('error_page_404')) {
+            die "Failed to read the default error page [ " .
+                ITEMAN::DynamicPublishing::Config->default('error_page_404') .
+                ' ] for the "404 Not Found" error. Check the "System Plugin Settings" page for more information.';
+        }
+
+        $self->_respond_for_404(
+            ITEMAN::DynamicPublishing::Config->default('error_page_404')
+            );
+        return;
+    }
+
     $self->_respond({
         status_code => 404,
         content_type => 'text/html',
