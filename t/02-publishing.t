@@ -72,6 +72,10 @@ BEGIN {
     $publisher->mock('rebuild_from_fileinfo', sub { create_page(); });
 }
 
+END {
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+}
+
 {
     ITEMAN::DynamicPublishing::Cache->new->clear;
 
@@ -136,10 +140,6 @@ BEGIN {
     $publishing->publish;
 
     is($object_loader_called, 0);
-}
-
-END {
-    ITEMAN::DynamicPublishing::Cache->new->clear;
 }
 
 sub create_page {
