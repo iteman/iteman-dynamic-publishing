@@ -138,10 +138,12 @@ sub _respond_for_404 {
         return;
     }
 
+    my $content = ITEMAN::DynamicPublishing::File->get_content($error_page);
     $self->_respond({
         status_code => 404,
         content_type => 'text/html',
-        response_body => $self->_mt->build_template_in_mem($error_page),
+        response_body => $content =~ /<\$?mt.+\$?>/i ? $self->_mt->build_template_in_mem($error_page)
+                                                     : $content
                     });
 }
 

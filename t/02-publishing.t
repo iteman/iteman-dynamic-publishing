@@ -35,7 +35,7 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 17;
+use Test::More tests => 24;
 
 my $cache_directory;
 local $ENV{DOCUMENT_ROOT} = $cache_directory;
@@ -180,9 +180,17 @@ END {
     ITEMAN::DynamicPublishing::Cache->new->clear;
 
     local $ENV{REQUEST_URI} = '/non-existing.html';
-    my $publishing = ITEMAN::DynamicPublishing->new;
-    $publishing->config(ITEMAN::DynamicPublishing::Config->new());
-    $publishing = Test::MockObject::Extends->new($publishing);
+    my $mt_called = 0;
+    my $config = ITEMAN::DynamicPublishing::Config->new;
+    my $mt = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing::MT->new($config));
+    $mt->mock('build_template_in_mem', sub {
+        $mt_called = 1;
+        ITEMAN::DynamicPublishing::MT->new($config)->build_template_in_mem(@_);
+                   }
+        );
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config($config);
+    $publishing->_mt($mt);
     $publishing->mock('_create_object_loader_for_fileinfo',
                       sub { return sub { undef } }
                       );
@@ -198,12 +206,87 @@ END {
         File::Spec->catfile($publishing->config->error_page_404)
         );
 
+    is($mt_called, 1);
     is(@output, 5);
     is($output[0], 'Status: ' . 404 . ' ' . status_message(404));
     is($output[1], 'Content-Length: ' . length($response_body));
     is($output[2], 'Content-Type: ' . 'text/html');
     is($output[3], '');
     is($output[4] . "\n", $response_body);
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+
+    my $error_page = File::Spec->catfile($cache_directory, '404.html');
+    create_page($error_page,
+                "<html>
+  <head>
+  </head>
+  <body>
+    Not Found <mt:var name=\"foo\">
+  </body>
+</html>
+"
+        );
+    local $ENV{REQUEST_URI} = '/non-existing.html';
+    my $mt_called = 0;
+    my $config = ITEMAN::DynamicPublishing::Config->new;
+    $config->error_page_404($error_page);
+    my $mt = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing::MT->new($config));
+    $mt->mock('build_template_in_mem', sub {
+        $mt_called = 1;
+        ITEMAN::DynamicPublishing::MT->new($config)->build_template_in_mem(@_);
+                   }
+        );
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config($config);
+    $publishing->_mt($mt);
+    $publishing->mock('_create_object_loader_for_fileinfo',
+                      sub { return sub { undef } }
+                      );
+    $publishing->publish;
+
+    is($mt_called, 1);
+    is($publishing->config->error_page_404, $error_page);
+    ok(-e $publishing->config->error_page_404);
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+
+    my $error_page = File::Spec->catfile($cache_directory, '404.html');
+    create_page($error_page,
+                "<html>
+  <head>
+  </head>
+  <body>
+    Not Found
+  </body>
+</html>
+"
+        );
+    local $ENV{REQUEST_URI} = '/non-existing.html';
+    my $mt_called = 0;
+    my $config = ITEMAN::DynamicPublishing::Config->new;
+    $config->error_page_404($error_page);
+    my $mt = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing::MT->new($config));
+    $mt->mock('build_template_in_mem', sub {
+        $mt_called = 1;
+        ITEMAN::DynamicPublishing::MT->new($config)->build_template_in_mem(@_);
+                   }
+        );
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config($config);
+    $publishing->_mt($mt);
+    $publishing->mock('_create_object_loader_for_fileinfo',
+                      sub { return sub { undef } }
+                      );
+    $publishing->publish;
+
+    is($mt_called, 0);
+    is($publishing->config->error_page_404, $error_page);
+    ok(-e $publishing->config->error_page_404);
 }
 
 sub create_page {
