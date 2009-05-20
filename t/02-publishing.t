@@ -113,7 +113,7 @@ END {
     $capture->stop;
     my @output = $capture->read;
     chomp @output;
- 
+
     my $response_body = ITEMAN::DynamicPublishing::File->get_content(
         File::Spec->catfile($publishing->file)
         );
@@ -141,7 +141,7 @@ END {
     $publishing->mock('_create_object_loader_for_fileinfo', sub {
         return sub {
             $object_loader_called = 1;
-            undef
+            undef;
         };
                       }
         );
