@@ -78,7 +78,19 @@ BEGIN {
     my $publisher = Test::MockObject->new;
     $publisher->fake_module('MT::WeblogPublisher');
     $publisher->fake_new('MT::WeblogPublisher');
-    $publisher->mock('rebuild_from_fileinfo', sub { create_page(); });
+    $publisher->mock('rebuild_from_fileinfo', sub {
+        create_page(File::Spec->catfile($cache_directory, 'index.html'),
+                    "<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+"
+            );
+                     }
+        );
 
     my $template = Test::MockObject->new;
     $template->fake_module('MT::Template');
@@ -132,8 +144,16 @@ END {
 {
     ITEMAN::DynamicPublishing::Cache->new->clear;
 
-    create_page();
-
+    create_page(File::Spec->catfile($cache_directory, 'index.html'),
+                "<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+"
+            );
     my $object_loader_called = 0;
     my $publishing = ITEMAN::DynamicPublishing->new;
     $publishing->config(ITEMAN::DynamicPublishing::Config->new());
@@ -187,16 +207,10 @@ END {
 }
 
 sub create_page {
-    my $fh = IO::File->new(File::Spec->catfile($cache_directory, 'index.html'), 'w');
-    print $fh <<EOF;
-<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-EOF
+    my $file = shift;
+    my $content = shift;
+    my $fh = IO::File->new($file, 'w');
+    print $fh $content;
     $fh->close;
 }
 
