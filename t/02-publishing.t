@@ -105,9 +105,8 @@ END {
 {
     ITEMAN::DynamicPublishing::Cache->new->clear;
 
-    my $publishing = ITEMAN::DynamicPublishing->new;
-    $publishing->config(ITEMAN::DynamicPublishing::Config->new());
-    $publishing = Test::MockObject::Extends->new($publishing);
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config(ITEMAN::DynamicPublishing::Config->new);
     $publishing->mock('_create_object_loader_for_fileinfo', sub {
         return sub {
             {
@@ -155,9 +154,8 @@ END {
 "
             );
     my $object_loader_called = 0;
-    my $publishing = ITEMAN::DynamicPublishing->new;
-    $publishing->config(ITEMAN::DynamicPublishing::Config->new());
-    $publishing = Test::MockObject::Extends->new($publishing);
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config(ITEMAN::DynamicPublishing::Config->new);
     $publishing->mock('_create_object_loader_for_fileinfo', sub {
         return sub {
             $object_loader_called = 1;
@@ -190,7 +188,7 @@ END {
         );
     my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
     $publishing->config($config);
-    $publishing->_mt($mt);
+    $publishing->mt($mt);
     $publishing->mock('_create_object_loader_for_fileinfo',
                       sub { return sub { undef } }
                       );
@@ -241,7 +239,7 @@ END {
         );
     my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
     $publishing->config($config);
-    $publishing->_mt($mt);
+    $publishing->mt($mt);
     $publishing->mock('_create_object_loader_for_fileinfo',
                       sub { return sub { undef } }
                       );
@@ -278,7 +276,7 @@ END {
         );
     my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
     $publishing->config($config);
-    $publishing->_mt($mt);
+    $publishing->mt($mt);
     $publishing->mock('_create_object_loader_for_fileinfo',
                       sub { return sub { undef } }
                       );

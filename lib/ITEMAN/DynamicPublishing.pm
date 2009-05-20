@@ -37,7 +37,7 @@ sub publish {
     my $self = shift;
 
     $self->_init_config unless $self->config;
-    $self->_init_mt unless $self->_mt;
+    $self->_init_mt unless $self->mt;
     $self->_init_script_name;
 
     $self->file($ENV{DOCUMENT_ROOT} . $self->_script_name);
@@ -76,6 +76,13 @@ sub file {
 
     $self->{file} = shift if @_;
     $self->{file};
+}
+
+sub mt {
+    my $self = shift;
+
+    $self->{mt} = shift if @_;
+    $self->{mt};
 }
 
 sub generate_etag {
@@ -142,7 +149,7 @@ sub _respond_for_404 {
     $self->_respond({
         status_code => 404,
         content_type => 'text/html',
-        response_body => $content =~ /<\$?mt.+\$?>/i ? $self->_mt->build_template_in_mem($error_page)
+        response_body => $content =~ /<\$?mt.+\$?>/i ? $self->mt->build_template_in_mem($error_page)
                                                      : $content
                     });
 }
@@ -158,7 +165,7 @@ sub _init_config {
 sub _init_mt {
     my $self = shift;
 
-    $self->_mt(ITEMAN::DynamicPublishing::MT->new($self->config));
+    $self->mt(ITEMAN::DynamicPublishing::MT->new($self->config));
 }
 
 sub _init_script_name {
@@ -182,13 +189,6 @@ sub _fileinfo {
 
     $self->{fileinfo} = shift if @_;
     $self->{fileinfo};
-}
-
-sub _mt {
-    my $self = shift;
-
-    $self->{mt} = shift if @_;
-    $self->{mt};
 }
 
 sub _redirect {
@@ -278,14 +278,14 @@ sub _rebuild_if_required {
     eval {
         my $mtime = ITEMAN::DynamicPublishing::File->mtime($self->file);
         unless ($mtime) {
-            $self->_mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
 
         unless ($self->_is_up_to_date($mtime)) {
             unlink $self->file
                 or die 'Failed to remove ' . $self->file . ' what will be rebuilt';
-            $self->_mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     };
     if ($@) {
