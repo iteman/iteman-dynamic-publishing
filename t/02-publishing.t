@@ -35,7 +35,7 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 11;
+use Test::More tests => 17;
 
 my $cache_directory;
 local $ENV{DOCUMENT_ROOT} = $cache_directory;
@@ -60,6 +60,15 @@ BEGIN {
         return MT::WeblogPublisher->new;
               }
         );
+    $mt->mock('load_tmpl', sub {
+        return MT::Template->new;
+              }
+        );
+    $mt->mock('build_page_in_mem', sub {
+        return ITEMAN::DynamicPublishing::File->get_content(ITEMAN::DynamicPublishing::Config->default('error_page_404'));
+              }
+        );
+    $mt->set_true('errstr');
 
     my $fileinfo = Test::MockObject->new;
     $fileinfo->fake_module('MT::FileInfo');
@@ -70,6 +79,11 @@ BEGIN {
     $publisher->fake_module('MT::WeblogPublisher');
     $publisher->fake_new('MT::WeblogPublisher');
     $publisher->mock('rebuild_from_fileinfo', sub { create_page(); });
+
+    my $template = Test::MockObject->new;
+    $template->fake_module('MT::Template');
+    $template->fake_new('MT::Template');
+    $template->set_true('param');
 }
 
 END {
@@ -140,6 +154,36 @@ END {
     $publishing->publish;
 
     is($object_loader_called, 0);
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+
+    local $ENV{REQUEST_URI} = '/non-existing.html';
+    my $publishing = ITEMAN::DynamicPublishing->new;
+    $publishing->config(ITEMAN::DynamicPublishing::Config->new());
+    $publishing = Test::MockObject::Extends->new($publishing);
+    $publishing->mock('_create_object_loader_for_fileinfo',
+                      sub { return sub { undef } }
+                      );
+
+    my $capture = IO::Capture::Stdout->new;
+    $capture->start;
+    $publishing->publish;
+    $capture->stop;
+    my @output = $capture->read;
+    chomp @output;
+
+    my $response_body = ITEMAN::DynamicPublishing::File->get_content(
+        File::Spec->catfile($publishing->config->error_page_404)
+        );
+
+    is(@output, 5);
+    is($output[0], 'Status: ' . 404 . ' ' . status_message(404));
+    is($output[1], 'Content-Length: ' . length($response_body));
+    is($output[2], 'Content-Type: ' . 'text/html');
+    is($output[3], '');
+    is($output[4] . "\n", $response_body);
 }
 
 sub create_page {
