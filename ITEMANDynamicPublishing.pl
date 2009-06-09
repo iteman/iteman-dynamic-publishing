@@ -26,7 +26,7 @@ use ITEMAN::DynamicPublishing::Config;
 use ITEMAN::DynamicPublishing::Cache;
 use Cwd;
 
-our $VERSION = '0.1.0';
+our $VERSION = '0.2.0';
 
 {
     require MT;

@@ -2,6 +2,35 @@
 
 Changes - Release Notes for ITEMAN Dynamic Publishing
 
+=head1 Release Notes for ITEMAN Dynamic Publishing 0.2.0 (beta)
+
+  Release Date: 2009-06-09
+
+  What's New in ITEMAN Dynamic Publishing 0.2.0
+
+   * PersistentPerl (SpeedyCGI) and FastCGI support: PersistentPerl (SpeedyCGI) and FastCGI have been supported. You can speed up ITEMAN Dynamic Publishing By using PersistentPerl (SpeedyCGI) or FastCGI. For more information, see the Installation and Configuration at: http://oss.iteman.jp/wiki/iteman-dynamic-publishing/Installation_and_Configuration_Guide
+   * Improved performance: The performance of 404 pages has been improved. Also a defect has been fixed that caused performance loss if a file which is not under control of Movable Type is requested.
+   * Fallback 404 page: A feature has been added to display the default 404 page when reading the custom 404 page failed.
+
+  See the following release notes for details.
+
+  Enhancements
+  ============
+
+  - Removed .objects-save. Now, .objects-save is created by the first access to the "System Plugin Settings" page.
+  - Improved messages for the "System Plugin Settings" page.
+  - Added error handling for loading the configuration object from the cache.
+  - Changed the style of eval blocks again. Because the "IDP: " prefix with $SIG{__DIE__} had not worked. (bin/dynamic-publishing.cgi)
+  - Added support for FastCGI. (IssueID 16)
+  - Added support for SpeedyCGI (PersistentPerl). (IssueID 23)
+  - Improved the performance of 404 pages. (IssueID 24)
+  - Added a feature to display the default 404 page when reading the custom 404 page failed. (IssueID 25)
+
+  Defect Fixes
+  ============
+
+  - Fixed a defect that caused performance loss if a file which is not under control of Movable Type is requested. (IssueID 22)
+
 =head1 Release Notes for ITEMAN Dynamic Publishing 0.1.0 (beta)
 
   Release Date: 2009-05-09
