@@ -39,7 +39,6 @@ our %Lexicon = (
     'The directory is not found or not readable for [_1]' => 'ディレクトリが見つからないか、[_1] ユーザからディレクトリへの読み込み権限がありません',
     'The directory is not readable for [_1]' => '[_1] ユーザからディレクトリへの読み込み権限がありません',
     'The directory is not writable for [_1]' => '[_1] ユーザからディレクトリへの書き込み権限がありません',
-    'Failed to access the directory. Make sure the directory permission is right.' => 'ディレクリへのアクセスに失敗しました。ディレクトリのパーミッションが適切かどうか確認してください。',
     'Clear Caches' => 'キャッシュのクリア',
     'Directory Index' => 'ディレクトリインデックス',
     'Directory Index represents the file name which is used if the requested URI does not contain a file name. The default value of the directory index is index.html. You should only change this if you are using a different directory index such as index.htm.' => 'ディレクトリインデックス は、リクエストされた URI にファイル名が含まれない場合に使われるファイル名を表します。ディレクトリインデックス のデフォルト値は index.html です。index.htm のように異なる ディレクトリインデックス を利用する場合に限って、この設定を変更してください。',
@@ -48,7 +47,6 @@ our %Lexicon = (
     'Any error page can be specified for the 404 error. The value should be one of the absolute path of a HTML file, the absolute path of a MT template file, or a URI for redirection.' => '404 エラー用に任意のエラーページを指定することができます。値は HTML ファイルの絶対パス、MT テンプレートファイルの絶対パス、リダイレクション用 URI のいずれかでなければなりません。',
     'The file is not found or not readable for [_1]' => 'ファイルが見つからないか、[_1] ユーザからファイルへの読み込み権限がありません',
     'The file is not readable for [_1]' => '[_1] ユーザからファイルへの読み込み権限がありません',
-    'Failed to access the file. Make sure the file permission is right.' => 'ファイルへのアクセスに失敗しました。ファイルのパーミッションが適切かどうか確認してください。',
 );
 
 1;

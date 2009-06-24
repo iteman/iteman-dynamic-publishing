@@ -96,14 +96,14 @@ sub load_config {
     $param->{cache_directory} = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
     eval {
-        $param->{cache_directory} = $plugin->_check_cache_directory($param);
+        $plugin->_check_cache_directory($param);
     };
     if ($@) {
         $param->{cache_directory_error} = 1;
     }
 
     eval {
-        $param->{error_page_404} = $plugin->_check_error_page_404($param);
+        $plugin->_check_error_page_404($param);
     };
     if ($@) {
         $param->{error_page_404_error} = 1;
@@ -185,14 +185,6 @@ sub _check_cache_directory {
         $param->{cache_directory_error_message} = $plugin->translate('The directory is not writable for [_1]', $user_name);
         die;
     }
-
-    my $cache_directory = Cwd::abs_path($param->{cache_directory});
-    unless ($cache_directory) {
-        $param->{cache_directory_error_message} =$plugin->translate('Failed to access the directory. Make sure the directory permission is right.');
-        die;
-    }
-
-    return $cache_directory;
 }
 
 sub _check_error_page_404 {
@@ -212,14 +204,6 @@ sub _check_error_page_404 {
         $param->{error_page_404_error_message} = $plugin->translate('The file is not readable for [_1]', $user_name);
         die $param->{error_page_404_error_message};
     }
-
-    my $abs_path = Cwd::abs_path($param->{error_page_404});
-    unless ($abs_path) {
-        $param->{error_page_404_error_message} =$plugin->translate('Failed to access the file. Make sure the file permission is right.');
-        die $param->{error_page_404_error_message};
-    }
-
-    return $abs_path;
 }
 
 1;
