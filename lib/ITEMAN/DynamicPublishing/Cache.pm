@@ -24,6 +24,7 @@ use warnings;
 use ITEMAN::DynamicPublishing::Config;
 use Storable qw(lock_retrieve lock_store);
 use Digest::MD5 qw(md5_hex);
+use File::Spec;
 
 sub new {
     my $class = shift;
@@ -45,7 +46,6 @@ sub cache {
 
 sub clear {
     require IO::Dir;
-    require File::Spec;
 
     my $self = shift;
     my $params = shift;
@@ -83,39 +83,43 @@ sub save {
         File::Path::mkpath(ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY);
     }
 
-    lock_store \$params->{data}, (ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($params->{cache_id}));
+    lock_store \$params->{data}, ($self->_cache_file($params->{cache_id}));
 }
 
 sub load {
     my $self = shift;
     my $cache_id = shift;
 
-    return undef unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
+    return unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
 
-    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
-    return undef unless -r $cache_file;
+    my $cache_file = $self->_cache_file($cache_id);
+    return unless -r $cache_file;
     ${ lock_retrieve $cache_file };
 }
 
 sub remove {
-    require File::Spec;
-
     my $self = shift;
     my $cache_id = shift;
 
-    return unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
-
-    my $cache_file = ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
-    unlink $cache_file;
+    my $cache_file = $self->_cache_file($cache_id);
+    unlink $cache_file if $cache_file;
 }
 
 sub exists {
     my $self = shift;
     my $cache_id = shift;
 
-    return undef unless -d ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY;
+    -e $self->_cache_file($cache_id);
+}
 
-    -e ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY . '/' . md5_hex($cache_id);
+sub _cache_file {
+    my $self = shift;
+    my $cache_id = shift;
+
+    File::Spec->catfile(
+        ITEMAN::DynamicPublishing::Config::CACHE_DIRECTORY,
+        md5_hex($cache_id)
+        );
 }
 
 1;
