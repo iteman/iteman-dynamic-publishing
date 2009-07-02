@@ -56,13 +56,6 @@ our $VERSION = '0.2.0';
                     'fileinfo' . $obj->file_path
                     );
             },
-            'MT::FileInfo::post_remove' => sub {
-                my ($cb, $app, $obj) = @_;
-                unlink $obj->file_path if -f $obj->file_path;
-                ITEMAN::DynamicPublishing::Cache->new->remove(
-                    'fileinfo' . $obj->file_path
-                    );
-            },
         },
                                   });
     MT->add_plugin($plugin);
