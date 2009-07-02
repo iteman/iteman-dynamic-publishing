@@ -50,6 +50,10 @@ our $VERSION = '0.2.0';
                 utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
                     or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
             },
+            'cms_post_delete' => sub {
+                utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+                    or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
+            },
             'MT::FileInfo::post_save' => sub {
                 my ($cb, $app, $obj) = @_;
                 ITEMAN::DynamicPublishing::Cache->new->remove(
