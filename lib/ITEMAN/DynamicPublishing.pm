@@ -295,7 +295,7 @@ sub _rebuild_if_required {
             return;
         }
 
-        unless ($self->_is_up_to_date($mtime)) {
+        unless ($self->_is_up_to_date) {
             unlink $self->file
                 or die 'Failed to remove ' . $self->file . ' what will be rebuilt';
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
@@ -331,11 +331,8 @@ sub _unlock_for_rebuild {
 
 sub _is_up_to_date {
     my $self = shift;
-    my $target_file_mtime = shift;
 
-    my $rebuild_touch_file_mtime = ITEMAN::DynamicPublishing::File->mtime(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
-        or die 'The file [ ' . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE . ' ] does not found';
-    return $target_file_mtime >= $rebuild_touch_file_mtime;
+    !ITEMAN::DynamicPublishing::Cache->is_expired($self->file);
 }
 
 sub _is_modified {
