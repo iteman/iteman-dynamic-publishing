@@ -296,7 +296,7 @@ sub _rebuild_if_required {
 
         unless ($self->_is_up_to_date) {
             unlink $self->file
-                or die 'Failed to remove ' . $self->file . ' what will be rebuilt';
+                or warn 'Failed to remove ' . $self->file . ' what will be rebuilt';
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
         }
     };
