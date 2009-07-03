@@ -289,8 +289,7 @@ sub _rebuild_if_required {
     while (!$self->_lock_for_rebuild) {}
 
     eval {
-        my $mtime = ITEMAN::DynamicPublishing::File->mtime($self->file);
-        unless ($mtime) {
+        unless (-e $self->file) {
             $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
