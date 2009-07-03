@@ -35,7 +35,9 @@ sub cache {
     my $self = shift;
     my $params = shift;
 
-    if ($self->exists($params->{cache_id})) {
+    if ($self->exists($params->{cache_id})
+        && !$self->is_expired($self->_cache_file($params->{cache_id}))
+        ) {
         return $self->load($params->{cache_id});
     }
 
@@ -110,6 +112,19 @@ sub exists {
     my $cache_id = shift;
 
     -e $self->_cache_file($cache_id);
+}
+
+
+sub is_expired {
+    my $self = shift;
+    my $cache_file = shift;
+
+    my $touch_file_mtime = ITEMAN::DynamicPublishing::File->mtime(ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+        or die 'The file [ ' . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE . ' ] does not found';
+    my $cache_file_mtime = ITEMAN::DynamicPublishing::File->mtime($cache_file)
+        or return 1;
+
+    return $cache_file_mtime < $touch_file_mtime;
 }
 
 sub _cache_file {
