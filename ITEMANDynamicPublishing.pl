@@ -46,14 +46,8 @@ our $VERSION = '0.2.0';
         system_config_template => 'system.tmpl',
         l10n_class => 'ITEMAN::DynamicPublishing::L10N',
         callbacks => {
-            'cms_post_save' => sub {
-                utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
-                    or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
-            },
-            'cms_post_delete' => sub {
-                utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
-                    or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
-            },
+            'cms_post_save' => \&update_touch_file,
+            'cms_post_delete' => \&update_touch_file,
         },
                                   });
     MT->add_plugin($plugin);
@@ -63,6 +57,12 @@ our $VERSION = '0.2.0';
         [ 'error_page_404', { Default => ITEMAN::DynamicPublishing::Config->default('error_page_404'), Scope => 'system'} ],
         ];
     $plugin->settings(MT::PluginSettings->new($settings));
+
+}
+
+sub update_touch_file {
+    utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
+        or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
 }
 
 sub load_config {
