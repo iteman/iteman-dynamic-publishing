@@ -208,8 +208,8 @@ sub rebuild_file {
     }
 
     if ($entry && $entry->status != MT::Entry::RELEASE() || !$map->build_type) {
-        require ITEMAN::DynamicPublishing::MT::EntryNotReleasedException;
-        die ITEMAN::DynamicPublishing::MT::EntryNotReleasedException->new;
+        require ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
+        die ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException->new;
     }
 
     my $timer = MT->get_timer;

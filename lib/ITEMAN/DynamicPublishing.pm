@@ -74,8 +74,8 @@ sub publish {
                             });
         };
         if ($@) {
-            require ITEMAN::DynamicPublishing::MT::EntryNotReleasedException;
-            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::EntryNotReleasedException')) {
+            require ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
+            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')) {
                 $self->_respond_for_404;
                 return;
             }

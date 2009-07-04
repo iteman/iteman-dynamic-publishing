@@ -24,7 +24,7 @@
 # This program is distributed under the terms of the
 # GNU General Public License, version 2.
 
-package ITEMAN::DynamicPublishing::MT::EntryNotReleasedException;
+package ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
 
 use strict;
 use warnings;
