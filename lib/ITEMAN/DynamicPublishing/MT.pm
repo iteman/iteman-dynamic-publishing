@@ -40,8 +40,12 @@ sub mt {
     my $self = shift;
 
     unless ($self->{mt}) {
+        require ITEMAN::DynamicPublishing::MT::RuntimePublisher;
+
         $self->{mt} = MT->new;
         $self->{mt}->set_language('en_US');
+        $self->{mt}->{WeblogPublisher} =
+            ITEMAN::DynamicPublishing::MT::RuntimePublisher->new;
     }
 
     $self->{mt};

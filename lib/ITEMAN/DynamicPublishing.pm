@@ -55,14 +55,34 @@ sub publish {
         return;
     }
 
-    $self->_rebuild_if_required;
-    my $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
-    unless (defined $content) {
-        $self->_respond_for_404;
-        return;
-    }
+    unless ($self->_fileinfo->{fileinfo_virtual}) {
+        $self->_rebuild_if_required;
+        my $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
+        unless (defined $content) {
+            $self->_respond_for_404;
+            return;
+        }
 
-    $self->_respond_for_success({ file => $self->file, content => $content });
+        $self->_respond_for_success({ file => $self->file, content => $content });
+    } else {
+        eval {
+            my $content = $self->_dynamically_build;
+            $self->_respond({
+                status_code => 200,
+                content_type => $self->_content_type_by_extension($self->file),
+                response_body => $content,
+                            });
+        };
+        if ($@) {
+            require ITEMAN::DynamicPublishing::MT::EntryNotReleasedException;
+            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::EntryNotReleasedException')) {
+                $self->_respond_for_404;
+                return;
+            }
+
+            die $@;
+        }
+    }
 }
 
 sub config {
@@ -260,7 +280,8 @@ sub _create_object_loader_for_fileinfo {
 SELECT
   fileinfo_id,
   fileinfo_entry_id,
-  fileinfo_template_id
+  fileinfo_template_id,
+  fileinfo_virtual
 FROM
   mt_fileinfo
 WHERE
@@ -346,6 +367,12 @@ sub _is_modified {
       and exists $ENV{HTTP_IF_NONE_MATCH}
       and $ENV{HTTP_IF_NONE_MATCH} eq $params->{'ETag'}
         );
+}
+
+sub _dynamically_build {
+    my $self = shift;
+
+    $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
 }
 
 1;
