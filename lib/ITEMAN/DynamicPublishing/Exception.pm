@@ -24,12 +24,15 @@
 # This program is distributed under the terms of the
 # GNU General Public License, version 2.
 
-package ITEMAN::DynamicPublishing::MT::EntryNotReleasedException;
+package ITEMAN::DynamicPublishing::Exception;
 
 use strict;
 use warnings;
 
-use base 'ITEMAN::DynamicPublishing::Exception';
+sub new {
+    my $class = shift;
+    bless {}, $class;
+}
 
 1;
 
