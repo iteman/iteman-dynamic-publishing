@@ -45,10 +45,19 @@ sub publish {
     $self->_fileinfo($self->_load_fileinfo);
 
     unless ($self->_fileinfo) {
-        my $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
-        unless (defined $content) {
-            $self->_respond_for_404;
-            return;
+        my $content;
+
+        eval {
+            $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
+        };
+        if ($@) {
+            require ITEMAN::DynamicPublishing::File::FileNotFoundException;
+            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
+                $self->_respond_for_404;
+                return;
+            }
+
+            die $@;
         }
 
         $self->_respond_for_success({ file => $self->file, content => $content });
@@ -56,22 +65,29 @@ sub publish {
     }
 
     unless ($self->_fileinfo->{fileinfo_virtual}) {
-        $self->_rebuild_if_required;
-        my $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
-        unless (defined $content) {
-            $self->_respond_for_404;
-            return;
+        my $content;
+
+        eval {
+            $content = $self->_rebuild_if_required;
+        };
+        if ($@) {
+            require ITEMAN::DynamicPublishing::File::FileNotFoundException;
+            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')
+                || UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')
+                ) {
+                $self->_respond_for_404;
+                return;
+            }
+
+            die $@;
         }
 
         $self->_respond_for_success({ file => $self->file, content => $content });
     } else {
+        my $content;
+
         eval {
-            my $content = $self->_dynamically_build;
-            $self->_respond({
-                status_code => 200,
-                content_type => $self->_content_type_by_extension($self->file),
-                response_body => $content,
-                            });
+            $content = $self->_dynamically_build;
         };
         if ($@) {
             require ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
@@ -82,6 +98,12 @@ sub publish {
 
             die $@;
         }
+
+        $self->_respond({
+            status_code => 200,
+            content_type => $self->_content_type_by_extension($self->file),
+            response_body => $content,
+                        });
     }
 }
 
@@ -310,17 +332,21 @@ sub _rebuild_if_required {
 
     while (!$self->_lock_for_rebuild) {}
 
+    my $contents;
     eval {
         unless (-e $self->file) {
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $contents = $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
             return;
         }
 
         unless ($self->_is_up_to_date) {
             unlink $self->file
                 or warn 'Failed to remove ' . $self->file . ' what will be rebuilt';
-            $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $contents = $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            return;
         }
+
+        $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
     };
     if ($@) {
         $self->_unlock_for_rebuild;
@@ -328,6 +354,7 @@ sub _rebuild_if_required {
     }
 
     $self->_unlock_for_rebuild;
+    $contents;
 }
 
 sub _lock_for_rebuild {
