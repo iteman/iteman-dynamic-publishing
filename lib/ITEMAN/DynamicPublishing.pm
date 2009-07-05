@@ -45,10 +45,10 @@ sub publish {
     $self->_fileinfo($self->_load_fileinfo);
 
     unless ($self->_fileinfo) {
-        my $content;
+        my $contents;
 
         eval {
-            $content = ITEMAN::DynamicPublishing::File->get_content($self->file);
+            $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
         };
         if ($@) {
             require ITEMAN::DynamicPublishing::File::FileNotFoundException;
@@ -60,15 +60,15 @@ sub publish {
             die $@;
         }
 
-        $self->_respond_for_success({ file => $self->file, content => $content });
+        $self->_respond_for_success({ file => $self->file, contents => $contents });
         return;
     }
 
     unless ($self->_fileinfo->{fileinfo_virtual}) {
-        my $content;
+        my $contents;
 
         eval {
-            $content = $self->_build;
+            $contents = $self->_build;
         };
         if ($@) {
             require ITEMAN::DynamicPublishing::File::FileNotFoundException;
@@ -82,12 +82,12 @@ sub publish {
             die $@;
         }
 
-        $self->_respond_for_success({ file => $self->file, content => $content });
+        $self->_respond_for_success({ file => $self->file, contents => $contents });
     } else {
-        my $content;
+        my $contents;
 
         eval {
-            $content = $self->_dynamically_build;
+            $contents = $self->_dynamically_build;
         };
         if ($@) {
             require ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
@@ -102,7 +102,7 @@ sub publish {
         $self->_respond({
             status_code => 200,
             content_type => $self->_content_type_by_extension($self->file),
-            response_body => $content,
+            response_body => $contents,
                         });
     }
 }
@@ -132,9 +132,9 @@ sub generate_etag {
     require Digest::MD5;
 
     my $self = shift;
-    my $content = shift;
+    my $contents = shift;
 
-    Digest::MD5::md5_hex($content);
+    Digest::MD5::md5_hex($contents);
 }
 
 sub generate_last_modified {
@@ -151,7 +151,7 @@ sub _respond_for_success {
     my $params = shift;
 
     my $last_modified = $self->generate_last_modified($params->{file});
-    my $etag = $self->generate_etag($params->{content});
+    my $etag = $self->generate_etag($params->{contents});
 
     unless ($self->_is_modified({
         'Last-Modified' => $last_modified,
@@ -171,7 +171,7 @@ sub _respond_for_success {
     $self->_respond({
         status_code => 200,
         content_type => $self->_content_type_by_extension($params->{file}),
-        response_body => $params->{content},
+        response_body => $params->{contents},
         headers => {
             'Last-Modified' => $last_modified,
             'ETag' => $etag,
@@ -188,8 +188,8 @@ sub _respond_for_404 {
         return;
     }
 
-    my $content = ITEMAN::DynamicPublishing::File->get_content($error_page);
-    unless (defined $content) {
+    my $contents = ITEMAN::DynamicPublishing::File->get_content($error_page);
+    unless (defined $contents) {
         if ($error_page eq ITEMAN::DynamicPublishing::Config->default('error_page_404')) {
             die "Failed to read the default error page [ " .
                 ITEMAN::DynamicPublishing::Config->default('error_page_404') .
@@ -205,8 +205,8 @@ sub _respond_for_404 {
     $self->_respond({
         status_code => 404,
         content_type => 'text/html',
-        response_body => $content =~ /<\$?mt.+\$?>/i ? $self->mt->build_template($error_page)
-                                                     : $content
+        response_body => $contents =~ /<\$?mt.+\$?>/i ? $self->mt->build_template($error_page)
+                                                      : $contents
                     });
 }
 
