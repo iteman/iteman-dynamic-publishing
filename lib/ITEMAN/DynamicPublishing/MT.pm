@@ -73,8 +73,7 @@ sub rebuild_from_fileinfo {
     my $fileinfo = $self->mt->model('fileinfo')->lookup($fileinfo_id);
     die "The fileinfo object for the id [ $fileinfo_id ] does not found" unless $fileinfo;
 
-    $self->mt->publisher->rebuild_from_fileinfo($fileinfo)
-        or die $self->mt->publisher->errstr;
+    $self->mt->publisher->rebuild_from_fileinfo($fileinfo);
 }
 
 1;
