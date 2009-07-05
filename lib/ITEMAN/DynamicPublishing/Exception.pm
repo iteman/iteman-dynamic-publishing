@@ -28,10 +28,21 @@ package ITEMAN::DynamicPublishing::Exception;
 
 use strict;
 use warnings;
+use overload qw{""} => \&message;
 
 sub new {
     my $class = shift;
-    bless {}, $class;
+
+    my $self = bless {}, $class;
+    $self->{message} = shift if @_;
+    $self;
+}
+
+sub message {
+    my $self = shift;
+
+    return ref $self unless $self->{message};
+    $self->{message};
 }
 
 1;
