@@ -188,18 +188,25 @@ sub _respond_for_404 {
         return;
     }
 
-    my $contents = ITEMAN::DynamicPublishing::File->get_content($error_page);
-    unless (defined $contents) {
-        if ($error_page eq ITEMAN::DynamicPublishing::Config->default('error_page_404')) {
-            die "Failed to read the default error page [ " .
-                ITEMAN::DynamicPublishing::Config->default('error_page_404') .
-                ' ] for the "404 Not Found" error. Check the "System Plugin Settings" page for more information.';
+    my $contents;
+
+    eval {
+        $contents = ITEMAN::DynamicPublishing::File->get_content($error_page);
+    };
+    if ($@) {
+        require ITEMAN::DynamicPublishing::File::FileNotFoundException;
+        if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
+            if ($error_page eq ITEMAN::DynamicPublishing::Config->default('error_page_404')) {
+                die "Failed to read the default error page [ " .
+                    ITEMAN::DynamicPublishing::Config->default('error_page_404') .
+                    ' ] for the "404 Not Found" error. Check the "System Plugin Settings" page for more information.';
+            }
+
+            $self->_respond_for_404(ITEMAN::DynamicPublishing::Config->default('error_page_404'));
+            return;
         }
 
-        $self->_respond_for_404(
-            ITEMAN::DynamicPublishing::Config->default('error_page_404')
-            );
-        return;
+        die $@;
     }
 
     $self->_respond({
