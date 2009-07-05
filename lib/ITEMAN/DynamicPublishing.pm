@@ -205,7 +205,7 @@ sub _respond_for_404 {
     $self->_respond({
         status_code => 404,
         content_type => 'text/html',
-        response_body => $content =~ /<\$?mt.+\$?>/i ? $self->mt->build_template_in_mem($error_page)
+        response_body => $content =~ /<\$?mt.+\$?>/i ? $self->mt->build_template($error_page)
                                                      : $content
                     });
 }

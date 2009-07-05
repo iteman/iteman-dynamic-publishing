@@ -51,7 +51,7 @@ sub mt {
     $self->{mt};
 }
 
-sub build_template_in_mem {
+sub build_template {
     my $self = shift;
     my $error_page = shift;
 
