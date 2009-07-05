@@ -68,7 +68,7 @@ sub publish {
         my $content;
 
         eval {
-            $content = $self->_rebuild_if_required;
+            $content = $self->_build;
         };
         if ($@) {
             require ITEMAN::DynamicPublishing::File::FileNotFoundException;
@@ -327,7 +327,7 @@ sub _content_type_by_extension {
     return 'application/xml' if $file_extension eq 'xml';
 }
 
-sub _rebuild_if_required {
+sub _build {
     my $self = shift;
 
     while (!$self->_lock_for_rebuild) {}
