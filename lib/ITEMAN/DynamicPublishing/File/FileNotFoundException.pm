@@ -16,36 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# This file is based on MT::WeblogPublisher by Six Apart, Ltd.
+# The following is the original copyright notice:
+#
+# Movable Type (r) Open Source (C) 2001-2009 Six Apart, Ltd.
+# This program is distributed under the terms of the
+# GNU General Public License, version 2.
 
-package ITEMAN::DynamicPublishing::File;
+package ITEMAN::DynamicPublishing::File::FileNotFoundException;
 
 use strict;
 use warnings;
 
-sub mtime {
-    my $class = shift;
-    my $file = shift;
-
-    my @status_info = stat $file;
-    return unless @status_info;
-
-    $status_info[9];
-}
-
-sub get_content {
-    my $class = shift;
-    my $file = shift;
-
-    open CONTENT, "< $file" or do {
-        require ITEMAN::DynamicPublishing::File::FileNotFoundException;
-        die ITEMAN::DynamicPublishing::File::FileNotFoundException->new('Failed to open the file [ ' . $file . ' ]');
-    };
-
-    my @contents = <CONTENT>;
-    close CONTENT;
- 
-    join('', @contents);
-}
+use base 'ITEMAN::DynamicPublishing::Exception';
 
 1;
 
