@@ -37,74 +37,14 @@ sub new {
 sub publish {
     my $self = shift;
 
-    $self->_init_config unless $self->config;
-    $self->_init_mt unless $self->mt;
-    $self->_init_script_name;
+    $self->_initialize();
 
-    $self->file($ENV{DOCUMENT_ROOT} . $self->_script_name);
-    $self->_fileinfo($self->_load_fileinfo);
-
-    unless ($self->_fileinfo) {
-        my $contents;
-
-        eval {
-            $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
-        };
-        if ($@) {
-            require ITEMAN::DynamicPublishing::File::FileNotFoundException;
-            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
-                $self->_respond_for_404;
-                return;
-            }
-
-            die $@;
-        }
-
-        $self->_respond_for_success({ file => $self->file, contents => $contents });
+    if ($self->_is_local_file) {
+        $self->_publish_local_file();
         return;
     }
 
-    unless ($self->_fileinfo->{fileinfo_virtual}) {
-        my $contents;
-
-        eval {
-            $contents = $self->_build;
-        };
-        if ($@) {
-            require ITEMAN::DynamicPublishing::File::FileNotFoundException;
-            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')
-                || UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')
-                ) {
-                $self->_respond_for_404;
-                return;
-            }
-
-            die $@;
-        }
-
-        $self->_respond_for_success({ file => $self->file, contents => $contents });
-    } else {
-        my $contents;
-
-        eval {
-            $contents = $self->_dynamically_build;
-        };
-        if ($@) {
-            require ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
-            if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')) {
-                $self->_respond_for_404;
-                return;
-            }
-
-            die $@;
-        }
-
-        $self->_respond({
-            status_code => 200,
-            content_type => $self->_content_type_by_extension($self->file),
-            response_body => $contents,
-                        });
-    }
+    $self->_publish_mt_contents();
 }
 
 sub config {
@@ -407,6 +347,86 @@ sub _dynamically_build {
     my $self = shift;
 
     $self->mt->build($self->_fileinfo->{fileinfo_id});
+}
+
+sub _is_local_file {
+    my $self = shift;
+
+    !$self->_fileinfo;
+}
+
+sub _is_static {
+    my $self = shift;
+
+    !$self->_fileinfo->{fileinfo_virtual};
+}
+
+sub _publish_local_file {
+    my $self = shift;
+
+    my $contents;
+
+    eval {
+        $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
+    };
+    if ($@) {
+        require ITEMAN::DynamicPublishing::File::FileNotFoundException;
+        if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
+            $self->_respond_for_404;
+            return;
+        }
+
+        die $@;
+    }
+
+    $self->_respond_for_success({ file => $self->file, contents => $contents });
+    return;
+}
+
+sub _publish_mt_contents {
+    my $self = shift;
+
+    my $contents;
+
+    eval {
+        if ($self->_is_static) {
+            $contents = $self->_build;
+        } else {
+            $contents = $self->_dynamically_build;
+        }
+    };
+    if ($@) {
+        require ITEMAN::DynamicPublishing::File::FileNotFoundException;
+        if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')
+            || UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')
+            ) {
+            $self->_respond_for_404;
+            return;
+        }
+
+        die $@;
+    }
+
+    if ($self->_is_static) {
+        $self->_respond_for_success({ file => $self->file, contents => $contents });
+    } else {
+        $self->_respond({
+            status_code => 200,
+            content_type => $self->_content_type_by_extension($self->file),
+            response_body => $contents,
+                        });
+    }
+}
+
+sub _initialize {
+    my $self = shift;
+
+    $self->_init_config unless $self->config;
+    $self->_init_mt unless $self->mt;
+    $self->_init_script_name;
+
+    $self->file($ENV{DOCUMENT_ROOT} . $self->_script_name);
+    $self->_fileinfo($self->_load_fileinfo);
 }
 
 1;
