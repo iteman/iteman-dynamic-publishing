@@ -335,14 +335,14 @@ sub _rebuild_if_required {
     my $contents;
     eval {
         unless (-e $self->file) {
-            $contents = $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $contents = $self->mt->build($self->_fileinfo->{fileinfo_id});
             return;
         }
 
         unless ($self->_is_up_to_date) {
             unlink $self->file
                 or warn 'Failed to remove ' . $self->file . ' what will be rebuilt';
-            $contents = $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+            $contents = $self->mt->build($self->_fileinfo->{fileinfo_id});
             return;
         }
 
@@ -399,7 +399,7 @@ sub _is_modified {
 sub _dynamically_build {
     my $self = shift;
 
-    $self->mt->rebuild_from_fileinfo($self->_fileinfo->{fileinfo_id});
+    $self->mt->build($self->_fileinfo->{fileinfo_id});
 }
 
 1;

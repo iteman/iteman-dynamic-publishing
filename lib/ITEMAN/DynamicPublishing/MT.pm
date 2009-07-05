@@ -66,7 +66,7 @@ sub build_template_in_mem {
     $self->mt->build_page_in_mem($tmpl) or die $self->mt->errstr;
 }
 
-sub rebuild_from_fileinfo {
+sub build {
     my $self = shift;
     my $fileinfo_id = shift;
 
