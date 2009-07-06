@@ -63,6 +63,7 @@ our $VERSION = '0.2.0';
 
 sub update_touch_file {
     require File::Spec;
+    require File::Path;
 
     my $app = MT->instance;
     my @unnecessary_files = (
@@ -77,7 +78,11 @@ sub update_touch_file {
     }
     foreach (@unnecessary_files) {
         if (-e $_) {
-            unlink $_;
+            if (-d $_) {
+                File::Path::rmtree($_);
+            } else {
+                unlink $_;
+            }
         }
     }
 
