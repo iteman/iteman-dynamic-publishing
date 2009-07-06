@@ -137,9 +137,7 @@ sub save_config {
     }
 
     if ($param->{clear_caches} eq 'true') {
-        ITEMAN::DynamicPublishing::Cache->new->clear({
-            excludes => [ 'ITEMAN::DynamicPublishing::Config' ]
-                                                     });
+        ITEMAN::DynamicPublishing::Cache->new->clear;
         return;
     }
 
