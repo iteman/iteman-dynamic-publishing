@@ -134,8 +134,9 @@ sub _respond_for_404 {
         $contents = ITEMAN::DynamicPublishing::File->get_content($error_page);
     };
     if ($@) {
+        my $error = $@;
         require ITEMAN::DynamicPublishing::File::FileNotFoundException;
-        if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
+        if (UNIVERSAL::isa($error, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
             if ($error_page eq ITEMAN::DynamicPublishing::Config->default('error_page_404')) {
                 die "Failed to read the default error page [ " .
                     ITEMAN::DynamicPublishing::Config->default('error_page_404') .
@@ -146,7 +147,7 @@ sub _respond_for_404 {
             return;
         }
 
-        die $@;
+        die $error;
     }
 
     $self->_respond({
@@ -296,8 +297,9 @@ sub _build {
         $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
     };
     if ($@) {
+        my $error = $@;
         $self->_unlock_for_rebuild;
-        die $@;
+        die $error;
     }
 
     $self->_unlock_for_rebuild;
@@ -370,13 +372,14 @@ sub _publish_local_file {
         $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
     };
     if ($@) {
+        my $error = $@;
         require ITEMAN::DynamicPublishing::File::FileNotFoundException;
-        if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
+        if (UNIVERSAL::isa($error, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')) {
             $self->_respond_for_404;
             return;
         }
 
-        die $@;
+        die $error;
     }
 
     $self->_respond_for_success({ file => $self->file, contents => $contents });
@@ -396,15 +399,16 @@ sub _publish_mt_contents {
         }
     };
     if ($@) {
+        my $error = $@;
         require ITEMAN::DynamicPublishing::File::FileNotFoundException;
-        if (UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')
-            || UNIVERSAL::isa($@, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')
+        if (UNIVERSAL::isa($error, 'ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException')
+            || UNIVERSAL::isa($error, 'ITEMAN::DynamicPublishing::File::FileNotFoundException')
             ) {
             $self->_respond_for_404;
             return;
         }
 
-        die $@;
+        die $error;
     }
 
     if ($self->_is_static) {
