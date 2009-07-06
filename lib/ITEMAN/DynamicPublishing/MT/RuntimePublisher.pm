@@ -32,7 +32,8 @@ use warnings;
 use base 'MT::WeblogPublisher';
 
 use File::Basename;
-use MT::PublishOption;
+
+use constant PUBLISH_OPTION_DYNAMIC => 3;
 
 sub rebuild_file {
     my $mt = shift;
@@ -49,7 +50,7 @@ sub rebuild_file {
         $map ||= MT::TemplateMap->load( $finfo->templatemap_id );
         $at  ||= $finfo->archive_type;
         if ( $finfo->startdate ) {
-            if ( ( $start, $end ) = $archiver->date_range($finfo->startdate) ) {
+            if ( ( $start, $end ) = $archiver->date_range->($finfo->startdate) ) {
                 $args{StartDate} = $start;
                 $args{EndDate}   = $end;
             }
@@ -68,7 +69,9 @@ sub rebuild_file {
     # compare file modification time to start of build process. if it
     # is greater than the start_time, then we shouldn't need to build this
     # file again
-    unless ( $map->build_type == MT::PublishOption::DYNAMIC() ) {
+    if ($map->can('build_type') && $map->build_type != PUBLISH_OPTION_DYNAMIC
+        || !$finfo->virtual
+        ) {
         if (my $mod_time = $fmgr->file_mod_time($file)) {
             return $fmgr->get_data($file) if $mod_time >= $mt->start_time;
         }
@@ -207,12 +210,14 @@ sub rebuild_file {
         }
     }
 
-    if ($entry && $entry->status != MT::Entry::RELEASE() || !$map->build_type) {
+    if ($entry && $entry->status != MT::Entry::RELEASE()
+        || $map->can('build_type') && !$map->build_type
+        ) {
         require ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException;
         die ITEMAN::DynamicPublishing::MT::RuntimePublisher::EntryNotReleasedException->new;
     }
 
-    my $timer = MT->get_timer;
+    my $timer = $tmpl->can('get_timer') ? MT->get_timer : undef;
     if ($timer) {
         $timer->pause_partial;
     }
@@ -249,7 +254,7 @@ sub rebuild_file {
       )
     {
 
-        if ( $archiver->group_based ) {
+        if ($archiver->can('group_based') && $archiver->group_based) {
             require MT::Promise;
             my $entries = sub { $archiver->archive_group_entries($ctx) };
             $ctx->stash( 'entries', MT::Promise::delay($entries) );
@@ -300,7 +305,9 @@ sub rebuild_file {
             file         => $file
         );
 
-        unless ( $map->build_type == MT::PublishOption::DYNAMIC() ) {
+        if ($map->can('build_type') && $map->build_type != PUBLISH_OPTION_DYNAMIC
+            || !$finfo->virtual
+            ) {
 
             ## First check whether the content is actually
             ## changed. If not, we won't update the published
@@ -418,7 +425,9 @@ sub rebuild_indexes {
     if ( !$tmpl->build_dynamic && !$force ) {
         next if ( defined $tmpl->rebuild_me && !$tmpl->rebuild_me );
     }
-    next if ( defined $tmpl->build_type && !$tmpl->build_type );
+    if ($tmpl->can('build_type')) {
+        die 'The build type of the template is not set ' if defined $tmpl->build_type && !$tmpl->build_type;
+    }
 
     my $file = $tmpl->outfile;
     $file = '' unless defined $file;
@@ -465,9 +474,11 @@ sub rebuild_indexes {
         }
     }
 
-    next unless ( $tmpl->build_type );
+    if ($tmpl->can('build_type')) {
+        die 'The build type of the template is not set ' unless $tmpl->build_type;
+    }
 
-    my $timer = MT->get_timer;
+    my $timer = $tmpl->can('get_timer') ? MT->get_timer : undef;
     if ($timer) {
         $timer->pause_partial;
     }
@@ -527,7 +538,9 @@ sub rebuild_indexes {
         file         => $file
     );
 
-    unless ( $tmpl->build_type == MT::PublishOption::DYNAMIC() ) {
+    if ($tmpl->can('build_type') && $tmpl->build_type != PUBLISH_OPTION_DYNAMIC
+        || !$tmpl->build_dynamic
+        ) {
         {
             ## First check whether the content is actually changed. If not,
             ## we won't update the published file, so as not to modify the mtime.
@@ -630,7 +643,7 @@ sub rebuild_from_fileinfo {
     if ( $fi->startdate ) {
         my $archiver = $pub->archiver($at);
 
-        if ( ( $start, $end ) = $archiver->date_range( $fi->startdate ) ) {
+        if ( ( $start, $end ) = $archiver->date_range->($fi->startdate)) {
             $entry = MT::Entry->load( { authored_on => [ $start, $end ] },
                 { range_incl => { authored_on => 1 }, limit => 1 } )
               or die "Parameter 'Entry' is required";
