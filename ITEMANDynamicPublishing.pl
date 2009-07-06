@@ -62,6 +62,25 @@ our $VERSION = '0.2.0';
 }
 
 sub update_touch_file {
+    require File::Spec;
+
+    my $app = MT->instance;
+    my @unnecessary_files = (
+        File::Spec->catfile($app->blog->site_path, '.htaccess'),
+        File::Spec->catfile($app->blog->site_path, 'mtview.php'),
+        File::Spec->catfile($app->blog->site_path, 'templates_c'),
+        File::Spec->catfile($app->blog->site_path, 'cache'),
+        );
+    if ($app->blog->archive_path) {
+        push @unnecessary_files, File::Spec->catfile($app->blog->archive_path, '.htaccess');
+        push @unnecessary_files, File::Spec->catfile($app->blog->archive_path, 'mtview.php');
+    }
+    foreach (@unnecessary_files) {
+        if (-e $_) {
+            unlink $_;
+        }
+    }
+
     utime undef, undef, (ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE)
         or die "Failed to change the access and modification times on " . ITEMAN::DynamicPublishing::Config::REBUILD_TOUCH_FILE;
 }
