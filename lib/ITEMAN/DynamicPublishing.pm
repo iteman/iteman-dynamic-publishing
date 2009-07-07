@@ -417,6 +417,11 @@ sub _publish_mt_contents {
             status_code => 200,
             content_type => $self->_content_type_by_extension($self->file),
             response_body => $contents,
+            headers => {
+                'Expires' => 'Thu, 19 Nov 1981 08:52:00 GMT',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0',
+                'Pragma' => 'no-cache',
+            },
                         });
     }
 }
