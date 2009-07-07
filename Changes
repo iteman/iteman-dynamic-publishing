@@ -2,6 +2,36 @@
 
 Changes - Release Notes for ITEMAN Dynamic Publishing
 
+=head1 Release Notes for ITEMAN Dynamic Publishing 0.3.0 (beta)
+
+  Release Date: 2009-XX-XX
+
+  What's New in ITEMAN Dynamic Publishing 0.3.0
+
+   * Real dynamic publishing: In previous versions, ITEMAN Dynamic Publishing supports lazy static publishing only. It creates a file when the file is requested. In contrast, real dynamic publishing provides on-demand publishing in-memory and does not create any file. Of course it is slower than lazy static publishing.
+   * License Change: The license has been changed from GPLv3 or any later version to GPLv2 or any later version. Why? The real dynamic publishing support required to copy and paste a few code of MT::WeblogPublisher to our sub-class. And since the license of MT is GPLv2, it cannot concurrent with GPLv3.
+
+  See the following release notes for details.
+
+  Enhancements
+  ============
+
+  - Removed code so that the path of the cache directory and error page for the 404 error is no longer converted to the absolute path to make Movable Type upgrade easier.
+  - Changed the message for the 404 error page.
+  - Changed the behavior of rebuild so that a page which is requested after removing any object is rebuilt.
+  - Improved cache management. (Issue #29)
+  - Changed the behavior of publish() so that the process continues even though removing the existing page is failed. (lib/ITEMAN/DynamicPublishing.pm)
+  - Changed the license to GPLv2 or any later version. (Issue #30)
+  - Added support for real dynamic publishing. (Issue #26)
+  - Improved error handling.
+  - Added a feature to remove .htaccess, mtview.php, template_c, cache which are created by MT for built-in dynamic publishing. (Issue #26)
+  - Changed the behavior of clearing caches to not exclude the configuration cache.
+
+  Defect Fixes
+  ============
+
+  - Fixed wrong permission for dynamic-publishing.* in the ZIP file.
+
 =head1 Release Notes for ITEMAN Dynamic Publishing 0.2.0 (beta)
 
   Release Date: 2009-06-09
