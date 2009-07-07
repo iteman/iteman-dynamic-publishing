@@ -369,9 +369,9 @@ END {
 
 sub create_page {
     my $file = shift;
-    my $content = shift;
+    my $contents = shift;
     my $fh = IO::File->new($file, 'w');
-    print $fh $content;
+    print $fh $contents;
     $fh->close;
 }
 
