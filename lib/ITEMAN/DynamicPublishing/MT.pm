@@ -27,13 +27,6 @@ sub new {
     bless {}, $class;
 }
 
-sub config {
-    my $self = shift;
-
-    $self->{config} = shift if @_;
-    $self->{config};
-}
-
 sub mt {
     eval 'use MT';
 
