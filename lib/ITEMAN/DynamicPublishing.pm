@@ -25,7 +25,6 @@ use warnings;
 use ITEMAN::DynamicPublishing::Config;
 use ITEMAN::DynamicPublishing::Cache;
 use ITEMAN::DynamicPublishing::ServerEnv;
-use ITEMAN::DynamicPublishing::MT;
 use ITEMAN::DynamicPublishing::File;
 use Fcntl qw(:flock);
 
@@ -63,6 +62,12 @@ sub file {
 
 sub mt {
     my $self = shift;
+
+    if (!$self->{mt} && !@_) {
+        require ITEMAN::DynamicPublishing::MT;
+
+        $self->{mt} = ITEMAN::DynamicPublishing::MT->new($self->config);
+    }
 
     $self->{mt} = shift if @_;
     $self->{mt};
@@ -164,12 +169,6 @@ sub _init_config {
     my $config = ITEMAN::DynamicPublishing::Cache->new->load('ITEMAN::DynamicPublishing::Config')
         or die 'Failed to load the configuration object. See the installation guide for more information: http://oss.iteman.jp/wiki/iteman-dynamic-publishing/Installation_and_Configuration_Guide';
     $self->config($config);
-}
-
-sub _init_mt {
-    my $self = shift;
-
-    $self->mt(ITEMAN::DynamicPublishing::MT->new($self->config));
 }
 
 sub _init_script_name {
@@ -426,7 +425,6 @@ sub _initialize {
     my $self = shift;
 
     $self->_init_config unless $self->config;
-    $self->_init_mt unless $self->mt;
     $self->_init_script_name;
 
     $self->file($ENV{DOCUMENT_ROOT} . $self->_script_name);
