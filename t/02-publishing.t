@@ -35,7 +35,7 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 34;
+use Test::More tests => 41;
 
 my $output_for_success = "<html>
   <head>
@@ -146,6 +146,41 @@ END {
     is($output[4], 'ETag: ' . $publishing->generate_etag($response_body));
     is($output[5], '');
     is($output[6] . "\n", $response_body);
+}
+
+{
+    ITEMAN::DynamicPublishing::Cache->new->clear;
+
+    my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
+    $publishing->config(ITEMAN::DynamicPublishing::Config->new);
+    $publishing->mock('_create_object_loader_for_fileinfo', sub {
+        return sub {
+            {
+                fileinfo_id => 1,
+                fileinfo_entry_id => undef,
+                fileinfo_template_id => 1,
+                fileinfo_virtual => 1,
+            };
+        };
+                      }
+        );
+
+    my $capture = IO::Capture::Stdout->new;
+    $capture->start;
+    $publishing->publish;
+    $capture->stop;
+    my @output = $capture->read;
+    chomp @output;
+
+    my $response_body = $output_for_success;
+
+    is($publishing->file, File::Spec->catfile($cache_directory, 'index.html'));
+    is(@output, 5);
+    is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
+    is($output[1], 'Content-Length: ' . length($response_body));
+    is($output[2], 'Content-Type: ' . 'text/html');
+    is($output[3], '');
+    is($output[4] . "\n", $response_body);
 }
 
 {
