@@ -49,10 +49,10 @@ sub rebuild_file {
         $args{Entry}    = $finfo->entry_id    if $finfo->entry_id;
         $map ||= MT::TemplateMap->load( $finfo->templatemap_id );
         $at  ||= $finfo->archive_type;
-        if ( $finfo->startdate ) {
-            if ( ( $start, $end ) = $archiver->date_range->($finfo->startdate) ) {
+        if ($finfo->startdate) {
+            if (($start, $end) = $mt->_portably_date_range($archiver, $finfo->startdate)) {
                 $args{StartDate} = $start;
-                $args{EndDate}   = $end;
+                $args{EndDate} = $end;
             }
         }
     }
@@ -641,9 +641,7 @@ sub rebuild_from_fileinfo {
       or die "Parameter 'Entry' is required"
       if $fi->entry_id;
     if ( $fi->startdate ) {
-        my $archiver = $pub->archiver($at);
-
-        if ( ( $start, $end ) = $archiver->date_range->($fi->startdate)) {
+        if (($start, $end) = $pub->_portably_date_range($pub->archiver($at), $fi->startdate)) {
             $entry = MT::Entry->load( { authored_on => [ $start, $end ] },
                 { range_incl => { authored_on => 1 }, limit => 1 } )
               or die "Parameter 'Entry' is required";
@@ -681,6 +679,17 @@ sub rebuild_from_fileinfo {
     my %cond;
     $pub->rebuild_file( $blog, $arch_root, $map, $at, $ctx, \%cond, 1,
         FileInfo => $fi, );
+}
+
+sub _portably_date_range {
+    my $pub = shift;
+    my $archiver = shift;
+
+    if (ref $archiver->date_range ne 'CODE') {
+        $archiver->date_range(@_);
+    } else {
+        $archiver->date_range->(@_);
+    }
 }
 
 1;
