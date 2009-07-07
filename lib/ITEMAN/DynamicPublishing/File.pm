@@ -32,7 +32,7 @@ sub mtime {
     $status_info[9];
 }
 
-sub get_content {
+sub get_contents {
     my $class = shift;
     my $file = shift;
 

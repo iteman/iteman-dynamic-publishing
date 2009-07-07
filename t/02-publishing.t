@@ -73,7 +73,7 @@ BEGIN {
               }
         );
     $mt->mock('build_page_in_mem', sub {
-        return ITEMAN::DynamicPublishing::File->get_content(ITEMAN::DynamicPublishing::Config->default('error_page_404'));
+        return ITEMAN::DynamicPublishing::File->get_contents(ITEMAN::DynamicPublishing::Config->default('error_page_404'));
               }
         );
     $mt->set_true('errstr');
@@ -93,7 +93,7 @@ BEGIN {
     $runtime_publisher->mock('rebuild_from_fileinfo', sub {
         my $file = File::Spec->catfile($cache_directory, 'index.html');
         create_page($file, $output_for_success);
-        ITEMAN::DynamicPublishing::File->get_content($file);
+        ITEMAN::DynamicPublishing::File->get_contents($file);
                              }
         );
 
@@ -133,7 +133,7 @@ END {
     my @output = $capture->read;
     chomp @output;
 
-    my $response_body = ITEMAN::DynamicPublishing::File->get_content($publishing->file);
+    my $response_body = ITEMAN::DynamicPublishing::File->get_contents($publishing->file);
 
     is($response_body, $output_for_success);
     is($publishing->file, File::Spec->catfile($cache_directory, 'index.html'));
@@ -234,7 +234,7 @@ END {
     my @output = $capture->read;
     chomp @output;
 
-    my $response_body = ITEMAN::DynamicPublishing::File->get_content(
+    my $response_body = ITEMAN::DynamicPublishing::File->get_contents(
         File::Spec->catfile($publishing->config->error_page_404)
         );
 
@@ -324,7 +324,7 @@ END {
     my @output = $capture->read;
     chomp @output;
 
-    my $response_body = ITEMAN::DynamicPublishing::File->get_content(
+    my $response_body = ITEMAN::DynamicPublishing::File->get_contents(
         File::Spec->catfile(ITEMAN::DynamicPublishing::Config->default('error_page_404'))
         );
 

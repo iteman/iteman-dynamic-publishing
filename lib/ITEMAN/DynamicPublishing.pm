@@ -136,7 +136,7 @@ sub _respond_for_404 {
     my $contents;
 
     eval {
-        $contents = ITEMAN::DynamicPublishing::File->get_content($error_page);
+        $contents = ITEMAN::DynamicPublishing::File->get_contents($error_page);
     };
     if ($@) {
         my $error = $@;
@@ -293,7 +293,7 @@ sub _build {
             return;
         }
 
-        $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
+        $contents = ITEMAN::DynamicPublishing::File->get_contents($self->file);
     };
     if ($@) {
         my $error = $@;
@@ -368,7 +368,7 @@ sub _publish_local_file {
     my $contents;
 
     eval {
-        $contents = ITEMAN::DynamicPublishing::File->get_content($self->file);
+        $contents = ITEMAN::DynamicPublishing::File->get_contents($self->file);
     };
     if ($@) {
         my $error = $@;
