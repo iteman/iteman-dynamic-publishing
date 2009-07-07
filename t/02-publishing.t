@@ -23,7 +23,6 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use ITEMAN::DynamicPublishing;
 use File::Basename;
 use File::Spec;
 use IO::Capture::Stdout;
@@ -58,7 +57,7 @@ BEGIN {
               }
         );
     $mt->mock('publisher', sub {
-        return MT::WeblogPublisher->new;
+        return ITEMAN::DynamicPublishing::MT::RuntimePublisher->new;
               }
         );
     $mt->mock('load_tmpl', sub {
@@ -79,8 +78,13 @@ BEGIN {
     my $publisher = Test::MockObject->new;
     $publisher->fake_module('MT::WeblogPublisher');
     $publisher->fake_new('MT::WeblogPublisher');
-    $publisher->mock('rebuild_from_fileinfo', sub {
-        create_page(File::Spec->catfile($cache_directory, 'index.html'),
+
+    my $runtime_publisher = Test::MockObject->new;
+    $runtime_publisher->fake_module('ITEMAN::DynamicPublishing::MT::RuntimePublisher');
+    $runtime_publisher->fake_new('ITEMAN::DynamicPublishing::MT::RuntimePublisher');
+    $runtime_publisher->mock('rebuild_from_fileinfo', sub {
+        my $file = File::Spec->catfile($cache_directory, 'index.html');
+        create_page($file,
                     "<html>
   <head>
   </head>
@@ -90,6 +94,8 @@ BEGIN {
 </html>
 "
             );
+
+        ITEMAN::DynamicPublishing::File->get_content($file);
                      }
         );
 
@@ -97,6 +103,8 @@ BEGIN {
     $template->fake_module('MT::Template');
     $template->fake_new('MT::Template');
     $template->set_true('param');
+
+    require ITEMAN::DynamicPublishing;
 }
 
 END {
@@ -114,6 +122,7 @@ END {
                 fileinfo_id => 1,
                 fileinfo_entry_id => undef,
                 fileinfo_template_id => 1,
+                fileinfo_virtual => 0,
             };
         };
                       }
@@ -126,9 +135,7 @@ END {
     my @output = $capture->read;
     chomp @output;
 
-    my $response_body = ITEMAN::DynamicPublishing::File->get_content(
-        File::Spec->catfile($publishing->file)
-        );
+    my $response_body = ITEMAN::DynamicPublishing::File->get_content($publishing->file);
 
     ok(-e File::Spec->catfile($cache_directory, 'index.html'));
     is(@output, 7);
@@ -182,9 +189,9 @@ END {
     my $mt_called = 0;
     my $config = ITEMAN::DynamicPublishing::Config->new;
     my $mt = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing::MT->new($config));
-    $mt->mock('build_template_in_mem', sub {
+    $mt->mock('build_template', sub {
         $mt_called = 1;
-        ITEMAN::DynamicPublishing::MT->new($config)->build_template_in_mem(@_);
+        ITEMAN::DynamicPublishing::MT->new($config)->build_template(@_);
                    }
         );
     my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
@@ -226,9 +233,9 @@ END {
         my $config = ITEMAN::DynamicPublishing::Config->new;
         $config->error_page_404($error_page);
         my $mt = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing::MT->new($config));
-        $mt->mock('build_template_in_mem', sub {
+        $mt->mock('build_template', sub {
             $mt_called = 1;
-            ITEMAN::DynamicPublishing::MT->new($config)->build_template_in_mem(@_);
+            ITEMAN::DynamicPublishing::MT->new($config)->build_template(@_);
                   }
             );
         my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
