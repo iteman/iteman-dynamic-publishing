@@ -35,7 +35,7 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 41;
+use Test::More tests => 44;
 
 my $output_for_success = "<html>
   <head>
@@ -175,12 +175,15 @@ END {
     my $response_body = $output_for_success;
 
     is($publishing->file, File::Spec->catfile($cache_directory, 'index.html'));
-    is(@output, 5);
+    is(@output, 8);
     is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
     is($output[1], 'Content-Length: ' . length($response_body));
     is($output[2], 'Content-Type: ' . 'text/html');
-    is($output[3], '');
-    is($output[4] . "\n", $response_body);
+    is($output[3], 'Cache-Control: ' . 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+    is($output[4], 'Pragma: ' . 'no-cache');
+    is($output[5], 'Expires: ' . 'Thu, 19 Nov 1981 08:52:00 GMT');
+    is($output[6], '');
+    is($output[7] . "\n", $response_body);
 }
 
 {
