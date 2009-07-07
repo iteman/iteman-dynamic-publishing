@@ -35,8 +35,16 @@ use IO::File;
 use ITEMAN::DynamicPublishing::File;
 use ITEMAN::DynamicPublishing::Cache;
 
-use Test::More tests => 32;
+use Test::More tests => 34;
 
+my $output_for_success = "<html>
+  <head>
+  </head>
+  <body>
+    Hello, world
+  </body>
+</html>
+";
 my $cache_directory;
 local $ENV{DOCUMENT_ROOT} = $cache_directory;
 local $ENV{REQUEST_URI} = '/';
@@ -84,19 +92,9 @@ BEGIN {
     $runtime_publisher->fake_new('ITEMAN::DynamicPublishing::MT::RuntimePublisher');
     $runtime_publisher->mock('rebuild_from_fileinfo', sub {
         my $file = File::Spec->catfile($cache_directory, 'index.html');
-        create_page($file,
-                    "<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-"
-            );
-
+        create_page($file, $output_for_success);
         ITEMAN::DynamicPublishing::File->get_content($file);
-                     }
+                             }
         );
 
     my $template = Test::MockObject->new;
@@ -137,7 +135,9 @@ END {
 
     my $response_body = ITEMAN::DynamicPublishing::File->get_content($publishing->file);
 
-    ok(-e File::Spec->catfile($cache_directory, 'index.html'));
+    is($response_body, $output_for_success);
+    is($publishing->file, File::Spec->catfile($cache_directory, 'index.html'));
+    ok(-e $publishing->file);
     is(@output, 7);
     is($output[0], 'Status: ' . 200 . ' ' . status_message(200));
     is($output[1], 'Content-Length: ' . length($response_body));
@@ -151,16 +151,7 @@ END {
 {
     ITEMAN::DynamicPublishing::Cache->new->clear;
 
-    create_page(File::Spec->catfile($cache_directory, 'index.html'),
-                "<html>
-  <head>
-  </head>
-  <body>
-    Hello, world
-  </body>
-</html>
-"
-            );
+    create_page(File::Spec->catfile($cache_directory, 'index.html'), $output_for_success);
     my $object_loader_called = 0;
     my $publishing = Test::MockObject::Extends->new(ITEMAN::DynamicPublishing->new);
     $publishing->config(ITEMAN::DynamicPublishing::Config->new);
