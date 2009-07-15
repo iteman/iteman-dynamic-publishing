@@ -27,7 +27,11 @@ use base qw(ITEMAN::DynamicPublishing::L10N::en_us);
 our %Lexicon = (
 
 # plugins/ITEMANDynamicPublishing/ITEMANDynamicPublishing.pl
-    'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.' => 'ITEMAN Dynamic Publishing は通常のパブリッシングワークフローによる動的な Web ページの作成を可能にします。ITEMAN Dynamic Publishing は Perl で書かれているため、あらゆるプラグインとともに使うことができます。',
+    'ITEMAN Dynamic Publishing provides a Perl-based dynamic publishing system that works as a replacement for the PHP-based dynamic publishing built into Movable Type . It allows you to publish Web pages dynamically with normal publishing workflow as well as the built-in dynamic publishing.
+
+In contrast to the built-in dynamic publishing, ITEMAN Dynamic Publishing works well with your existing Perl-based plugins.' => 'ITEMAN Dynamic Publishing は、Movable Type 標準の PHP ベースのダイナミックパブリッシングの代わりとなる、Perl ベースのダイナミックパブリッシングシステムを提供します。このシステムは、標準のダイナミックパブリッシングと同様に、通常のパブリッシングワークフローによる Web ページの動的な公開を可能にします。
+
+標準のダイナミックパブリッシングとは対照的に、ITEMAN Dynamic Publishing では既存の Perl ベースのプラグインが問題なく動作します。',
     'ITEMAN, Inc.' => '株式会社アイテマン',
     'Directory Index is required' => 'ディレクトリインデックス は必須です',
     'The error page for the status code 404 is required' => 'ステータスコード 404 のためのエラーページは必須です',

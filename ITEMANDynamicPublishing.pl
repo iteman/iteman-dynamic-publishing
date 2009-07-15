@@ -32,7 +32,9 @@ our $VERSION = '0.3.0';
 {
     require MT;
 
-    my $description = 'ITEMAN Dynamic Publishing allows you to create dynamic Web pages with normal publishing workflow. Since ITEMAN Dynamic Publishing is written in Perl, it can be used with any plug-ins.';
+    my $description = 'ITEMAN Dynamic Publishing provides a Perl-based dynamic publishing system that works as a replacement for the PHP-based dynamic publishing built into Movable Type . It allows you to publish Web pages dynamically with normal publishing workflow as well as the built-in dynamic publishing.
+
+In contrast to the built-in dynamic publishing, ITEMAN Dynamic Publishing works well with your existing Perl-based plugins.';
     my $author_name = 'ITEMAN, Inc.';
     my $author_link = 'http://iteman.jp/';
 
