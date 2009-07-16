@@ -1,4 +1,4 @@
-# ITEMAN Dynamic Publishing - A Perl based dynamic publishing extension for Moveble Type
+# ITEMAN Dynamic Publishing - A Perl-based dynamic publishing system for Moveble Type
 # Copyright (c) 2009 ITEMAN, Inc. All rights reserved.
 #
 # This file is part of ITEMAN Dynamic Publishing.
