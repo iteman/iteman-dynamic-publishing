@@ -1,5 +1,5 @@
 # ITEMAN Dynamic Publishing - A Perl-based dynamic publishing system for Moveble Type
-# Copyright (c) 2009 ITEMAN, Inc. All rights reserved.
+# Copyright (c) 2009-2010 ITEMAN, Inc. All rights reserved.
 #
 # This file is part of ITEMAN Dynamic Publishing.
 # 
@@ -27,6 +27,7 @@ use ITEMAN::DynamicPublishing::Cache;
 use ITEMAN::DynamicPublishing::ServerEnv;
 use ITEMAN::DynamicPublishing::File;
 use Fcntl qw(:flock);
+use Encode;
 
 sub new {
     my $class = shift;
@@ -79,7 +80,7 @@ sub generate_etag {
     my $self = shift;
     my $contents = shift;
 
-    Digest::MD5::md5_hex($contents);
+    Digest::MD5::md5_hex($self->_encode_string_if_utf8($contents));
 }
 
 sub generate_last_modified {
@@ -219,7 +220,7 @@ sub _respond {
     }
 
     print "\n";
-    print $params->{response_body} if exists $params->{response_body};
+    print $self->_encode_string_if_utf8($params->{response_body}) if exists $params->{response_body};
 }
 
 sub _load_fileinfo {
@@ -434,6 +435,13 @@ sub _initialize {
 
     $self->file($ENV{DOCUMENT_ROOT} . $self->_script_name);
     $self->_fileinfo($self->_load_fileinfo);
+}
+
+sub _encode_string_if_utf8 {
+    my $self = shift;
+    my $string = shift;
+
+    utf8::is_utf8($string) ? encode('utf8', $string) : $string;
 }
 
 1;
