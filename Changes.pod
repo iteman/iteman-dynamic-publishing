@@ -2,6 +2,24 @@
 
 Changes - Release Notes for ITEMAN Dynamic Publishing
 
+=head1 Release Notes for ITEMAN Dynamic Publishing 0.4.0 (beta)
+
+  Release Date: 2010-07-07
+
+  What's New in ITEMAN Dynamic Publishing 0.4.0
+
+   Supports Movable Type 5.:
+
+    (Issue #33)
+
+    Movable Type and Movable Type Open Source 5 have been supported.
+
+   A Defect Fix:
+
+    (Issue #37)
+
+    A defect has been fixed that caused an error "Can't call method "site_path" on an undefined value at ..." to be logged after removing a global template.
+
 =head1 Release Notes for ITEMAN Dynamic Publishing 0.3.0 (beta)
 
   Release Date: 2009-07-16
