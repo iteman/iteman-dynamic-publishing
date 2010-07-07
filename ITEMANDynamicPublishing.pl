@@ -68,6 +68,10 @@ sub update_touch_file {
     require File::Path;
 
     my $app = MT->instance;
+    unless ($app->blog) {
+        return;
+    }
+
     my @unnecessary_files = (
         File::Spec->catfile($app->blog->site_path, '.htaccess'),
         File::Spec->catfile($app->blog->site_path, 'mtview.php'),
