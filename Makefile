@@ -20,9 +20,9 @@
 PLUGIN_NAME = ITEMANDynamicPublishing
 PLUGIN_VERSION = $(shell grep "VERSION = '[0-9]\+\.[0-9]\+\.[0-9]\+'" $(PLUGIN_NAME).pl | sed -e 's/^.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/')
 
-TARGETS = Changes \
+TARGETS = Changes.pod \
 	ITEMANDynamicPublishing.pl \
-	README \
+	README.pod \
 	bin \
 	lib \
 	tmpl
